@@ -1,0 +1,6 @@
+# Keep line endings identical on Windows, macOS and Linux so formatting checks agree.
+* text=auto eol=lf
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.png binary
+*.woff2 binary

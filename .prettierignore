@@ -1,0 +1,11 @@
+# Build output and reports
+dist
+coverage
+playwright-report
+test-results
+package-lock.json
+
+# Private local notes and hidden tool folders are not part of the project
+*.local.*
+.*/
+!.github/
