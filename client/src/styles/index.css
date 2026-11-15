@@ -1,0 +1,62 @@
+/*
+ * Global stylesheet: loads Tailwind, the design tokens, and the few base rules that
+ * apply to the whole page (background, text, focus ring, scrollbars).
+ */
+@import 'tailwindcss';
+@import './tokens.css';
+
+/* Tell Tailwind where the components live so it generates the classes they use. */
+@source '../';
+
+@layer base {
+  html {
+    font-family: var(--font-sans);
+    /* Slightly tighter Inter letterforms, and the clearer "1", "l" and "0" shapes. */
+    font-feature-settings: 'cv05', 'cv08', 'zero';
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background: var(--oc-bg);
+    color: var(--oc-ink);
+    font-size: 15px;
+    line-height: 1.55;
+  }
+
+  /* Numbers line up in columns and never use ligatures (">=" must stay two characters). */
+  .font-mono,
+  code {
+    font-variant-numeric: tabular-nums;
+    font-variant-ligatures: none;
+  }
+
+  /* One visible focus ring for keyboard users, in the brand colour. */
+  :focus-visible {
+    outline: 2px solid var(--oc-primary);
+    outline-offset: 2px;
+  }
+
+  ::selection {
+    background: var(--oc-primary-soft);
+    color: var(--oc-ink);
+  }
+
+  /* Thin scrollbars that match the theme inside scrollable panels. */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--oc-line-strong) transparent;
+  }
+
+  /* People who ask their system for less motion get no animations. */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
