@@ -95,8 +95,8 @@ export const CURVE_PRESETS: readonly CurvePreset[] = [
     p: '97',
     a: '2',
     b: '3',
-    pointP: ['3', '6'],
-    pointQ: ['10', '21'],
+    pointP: ['1', '43'],
+    pointQ: ['3', '6'],
     k: '20',
   },
   {
