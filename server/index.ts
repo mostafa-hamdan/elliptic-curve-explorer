@@ -10,9 +10,11 @@ const port = Number(process.env.PORT ?? 3000);
 
 /**
  * Address to bind to. The default is this computer only, so nothing is exposed to the
- * network during a local demo. A hosting platform sets `HOST` when it needs to.
+ * network during a local demo. "localhost" makes the server listen on both loopback
+ * addresses (127.0.0.1 and ::1), so http://localhost works at once whichever one the
+ * browser tries first. A hosting platform sets `HOST` when it needs to.
  */
-const host = process.env.HOST ?? '127.0.0.1';
+const host = process.env.HOST ?? 'localhost';
 
 if (!Number.isInteger(port) || port < 1 || port > 65535) {
   console.error(`PORT must be a whole number between 1 and 65535, but got "${process.env.PORT}".`);
