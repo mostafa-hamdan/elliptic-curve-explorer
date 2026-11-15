@@ -39,10 +39,9 @@ export default defineConfig({
       name: 'chromium',
       use: { ...devices['Desktop Chrome'], viewport },
     },
-    // Firefox runs on CI and on request (PW_FIREFOX=1). It is not in the default local
-    // run because Playwright's Firefox build needs system libraries that are not present
-    // on every Windows laptop.
-    ...(isCI || process.env.PW_FIREFOX
+    // Firefox runs only on request (PW_FIREFOX=1). It is not supported yet: see the
+    // Limitations page. CI runs it in a separate job that does not block a change.
+    ...(process.env.PW_FIREFOX
       ? [{ name: 'firefox', use: { ...devices['Desktop Firefox'], viewport } }]
       : []),
     // The copy of Microsoft Edge installed on the computer, on request (PW_EDGE=1).

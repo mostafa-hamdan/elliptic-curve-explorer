@@ -52,5 +52,11 @@ These are meant as raw material for the project report.
   everything, which is the simplest thing for someone running the project once.
 - **The server runs TypeScript directly** (through `tsx`), so there is no separate build
   step for it.
-- **Browser tests** run in Chromium by default. Firefox runs on CI; the installed
-  Microsoft Edge can be added locally with `PW_EDGE=1`.
+- **Browser tests** run in Chromium by default; the installed Microsoft Edge can be
+  added locally with `PW_EDGE=1`. Both pass in full.
+- **Firefox is not supported yet.** On CI (Linux) about one Firefox test in seven ends
+  with "Page crashed", mostly in the tests that take full-page screenshots and then run
+  the accessibility check. The cause is not known: Playwright's Firefox build does not
+  start on the development laptop, so it could not be reproduced there. Firefox therefore
+  runs in a separate CI job that does not block changes, and the Limitations page tells
+  users to use Chrome or Edge.

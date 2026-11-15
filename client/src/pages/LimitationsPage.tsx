@@ -128,11 +128,12 @@ const LIMITATIONS: Limitation[] = [
   },
   {
     title: 'Browsers',
-    limit: <>Tested on current versions of Chrome and Edge.</>,
+    limit: <>Tested on current versions of Chrome and Edge. Firefox is not verified yet.</>,
     reason: (
       <>
-        The app needs a modern browser with support for very large whole numbers (BigInt) and
-        background workers. Older browsers such as Internet Explorer will not run it.
+        Every screen is checked automatically in Chrome and Edge. The same checks do not all pass in
+        Firefox yet, so please use Chrome or Edge. The app needs a modern browser with very large
+        whole numbers (BigInt) and background workers; Internet Explorer will not run it.
       </>
     ),
   },
