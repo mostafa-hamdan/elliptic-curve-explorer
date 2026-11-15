@@ -1,5 +1,5 @@
 # Runs the whole check suite on every push and pull request:
-# lint, type check, unit and property tests, build, then the browser tests.
+# lint, type check, unit and property tests, then the browser tests against a fresh build.
 name: CI
 
 on:
@@ -10,7 +10,7 @@ on:
 jobs:
   checks:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
 
@@ -30,3 +30,21 @@ jobs:
 
       - name: Unit and property tests
         run: npm test
+
+      - name: Install test browsers
+        run: npx playwright install --with-deps chromium firefox
+
+      # Builds the website, starts the server and drives it in Chromium and Firefox.
+      # Any console error or warning, accessibility violation or overflow fails the run.
+      - name: Browser tests
+        run: npm run test:e2e
+
+      - name: Keep the browser test report when something failed
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7
