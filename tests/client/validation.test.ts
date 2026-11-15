@@ -11,7 +11,10 @@ import {
   checkScalar,
   pointProblem,
 } from '../../client/src/features/explorer/validation.ts';
+import { multiplyWithSteps } from '@shared/ecc/index.ts';
+import { multiplySummary } from '../../client/src/features/multiply/summary.ts';
 import {
+  count,
   curveKey,
   equationText,
   grouped,
@@ -186,5 +189,43 @@ describe('formatting', () => {
   it('gives each curve a distinct key', () => {
     expect(curveKey(null)).toBe('');
     expect(curveKey({ p: 23n, a: 1n, b: 1n })).toBe('23:1:1');
+  });
+});
+
+describe('counts and the multiply summary', () => {
+  const curve = { p: 17n, a: 2n, b: 2n };
+  const P = { x: 5n, y: 1n };
+
+  it('uses the singular only for exactly one', () => {
+    expect(count(0, 'addition')).toBe('0 additions');
+    expect(count(1, 'addition')).toBe('1 addition');
+    expect(count(1n, 'bit')).toBe('1 bit');
+    expect(count(2048, 'point')).toBe('2,048 points');
+    expect(count(2, 'child', 'children')).toBe('2 children');
+  });
+
+  it('never prints "1 additions" or "1 doublings", for any k up to 300', () => {
+    for (let k = 1n; k <= 300n; k += 1n) {
+      const text = multiplySummary(multiplyWithSteps(curve, k, P));
+      expect(text, `k = ${k}`).not.toMatch(/\b1 (additions|doublings|bits)\b/);
+      expect(text, `k = ${k}`).not.toMatch(/\b(0|[2-9]|\d{2,}) (addition|doubling|bit)\b/);
+    }
+  });
+
+  it('describes k = 1, 2 and 13 correctly', () => {
+    expect(multiplySummary(multiplyWithSteps(curve, 1n, P))).toBe(
+      '1 bit: no doubling and no addition are needed, because 1 · P is P itself.',
+    );
+    expect(multiplySummary(multiplyWithSteps(curve, 2n, P))).toBe(
+      '2 bits: 1 doubling and 0 additions, instead of 1 addition one at a time.',
+    );
+    expect(multiplySummary(multiplyWithSteps(curve, 13n, P))).toBe(
+      '4 bits: 3 doublings and 2 additions, instead of 12 additions one at a time.',
+    );
+  });
+
+  it('gives the size of the naive count for a huge k', () => {
+    const text = multiplySummary(multiplyWithSteps(curve, 10n ** 40n, P));
+    expect(text).toMatch(/instead of \|k\| − 1 additions one at a time, a 41-digit number\.$/);
   });
 });

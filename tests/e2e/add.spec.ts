@@ -53,6 +53,31 @@ test.describe('add two points', () => {
     await expect(page.getByLabel('y of Q')).toHaveValue('10');
   });
 
+  test('Double P never marks its own result as out of date', async ({ page }) => {
+    // Straight after an earlier P + Q, with a Q different from P.
+    await page.getByRole('button', { name: 'Calculate P + Q' }).click();
+    await page.getByRole('button', { name: 'Double P (2P)' }).click();
+    await expect(page.getByTestId('add-result')).toHaveText('(7, 12)');
+    await expect(page.getByTestId('add-stale')).toHaveCount(0);
+
+    // With P typed outside 0 … p − 1, so the boxes and the computed point differ in text.
+    await setPoint(page, 'P', '26', '-13');
+    await page.getByRole('button', { name: 'Double P (2P)' }).click();
+    await expect(page.getByTestId('add-result')).toHaveText('(7, 12)');
+    await expect(page.getByTestId('add-stale')).toHaveCount(0);
+
+    // With P = O.
+    await page.getByTestId('add-p-card').getByLabel('Point at infinity (O)').check();
+    await page.getByRole('button', { name: 'Double P (2P)' }).click();
+    await expect(page.getByTestId('add-result')).toHaveText('O');
+    await expect(page.getByTestId('add-stale')).toHaveCount(0);
+
+    // Editing Q afterwards does make it out of date, as it should.
+    await page.getByTestId('add-q-card').getByLabel('Point at infinity (O)').uncheck();
+    await setPoint(page, 'Q', '0', '1');
+    await expect(page.getByTestId('add-stale')).toBeVisible();
+  });
+
   test('pressing Enter in a box calculates', async ({ page }) => {
     await page.getByLabel('y of Q').press('Enter');
     await expect(page.getByTestId('add-result')).toHaveText('(17, 20)');

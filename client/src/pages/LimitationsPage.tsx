@@ -143,9 +143,9 @@ const LIMITATIONS: Limitation[] = [
 export function LimitationsPage() {
   usePageTitle('Limitations');
   return (
-    <div className="mx-auto max-w-4xl">
+    <div>
       <h1 className="text-2xl font-semibold tracking-tight text-ink">Limitations</h1>
-      <p className="mt-1 text-muted">
+      <p className="mt-1 max-w-3xl text-muted">
         What OnCurve cannot do, or only does up to a limit, and why. Everything not listed here is
         expected to work; if it does not, that is a bug.
       </p>
@@ -156,7 +156,7 @@ export function LimitationsPage() {
         steps.
       </Callout>
 
-      <ul className="mt-5 grid gap-4 md:grid-cols-2" data-testid="limitations-list">
+      <ul className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3" data-testid="limitations-list">
         {LIMITATIONS.map((item) => (
           <li key={item.title} className="min-w-0">
             <Card className="h-full p-5">

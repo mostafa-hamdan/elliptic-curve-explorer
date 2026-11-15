@@ -19,12 +19,13 @@ import { CardHeader } from '../../components/ui/Card.tsx';
 import { Icon } from '../../components/ui/Icon.tsx';
 import { TextField } from '../../components/ui/TextField.tsx';
 import { cx } from '../../lib/cx.ts';
-import { grouped, plain, pointText, shortNumber } from '../../lib/format.ts';
+import { plain, pointText, shortNumber } from '../../lib/format.ts';
 import { AdditionSteps } from '../add/AdditionSteps.tsx';
 import { useExplorer } from '../explorer/ExplorerContext.tsx';
 import { PointInput } from '../explorer/PointInput.tsx';
 import { ResultHeader } from '../explorer/ResultHeader.tsx';
 import { checkPoint, checkScalar, pointProblem } from '../explorer/validation.ts';
+import { multiplySummary } from './summary.ts';
 
 /** What each kind of row does, in words. */
 const OPERATION_TEXT: Record<MultiplyRow['operation'], string> = {
@@ -232,12 +233,8 @@ function MultiplyResult({ curve, trace }: MultiplyResultProps) {
               {trace.bits}
               <sub>2</sub>
             </p>
-            <p className="mt-2">
-              {grouped(trace.bits.length)} bits: {grouped(trace.doublings)}{' '}
-              {trace.doublings === 1 ? 'doubling' : 'doublings'} and {grouped(trace.additions)}{' '}
-              {trace.additions === 1 ? 'addition' : 'additions'}, instead of{' '}
-              {trace.magnitude.toString().length <= 12 ? grouped(trace.magnitude - 1n) : 'k − 1'}{' '}
-              additions one at a time.
+            <p className="mt-2" data-testid="multiply-summary">
+              {multiplySummary(trace)}
             </p>
           </div>
           <MultiplyTable curve={curve} trace={trace} />

@@ -6,7 +6,7 @@
  */
 import { useEffect, useRef, useState } from 'react';
 import { curveName, type Point } from '@shared/ecc/index.ts';
-import { grouped } from '../../lib/format.ts';
+import { count } from '../../lib/format.ts';
 import { useTheme } from '../theme/ThemeContext.tsx';
 import type { PointList } from './usePointListing.ts';
 
@@ -214,7 +214,7 @@ export function PointsPlot({ list, highlights }: PointsPlotProps) {
     }
   }, [list, highlights, size, height, theme, p, density]);
 
-  const description = `Plot of the ${grouped(list.count)} points of ${curveName(list.curve)}${
+  const description = `Plot of the ${count(list.count, 'point')} of ${curveName(list.curve)}${
     density ? ', shown as a density map' : ''
   }.`;
 

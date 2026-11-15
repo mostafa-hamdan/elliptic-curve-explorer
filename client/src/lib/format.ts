@@ -68,6 +68,20 @@ export function grouped(value: number | bigint): string {
 }
 
 /**
+ * A count with its noun in the right form: "1 addition", "0 additions", "2,048 points".
+ * Every count printed on screen goes through this, so "1 additions" cannot happen.
+ *
+ * @param value - the count.
+ * @param singular - the noun for exactly one, for example "addition".
+ * @param pluralForm - the noun for any other count; defaults to the singular plus "s".
+ * @returns the grouped number followed by the noun.
+ */
+export function count(value: number | bigint, singular: string, pluralForm?: string): string {
+  const one = typeof value === 'bigint' ? value === 1n : value === 1;
+  return `${grouped(value)} ${one ? singular : (pluralForm ?? `${singular}s`)}`;
+}
+
+/**
  * The curve equation with its numbers filled in, simplified the way it is written by
  * hand: a term with coefficient 0 is left out and a coefficient of 1 is not written.
  *

@@ -54,6 +54,20 @@ test.describe('multiply a point by a scalar', () => {
     await expect(page.getByTestId('multiply-result')).toHaveText('(16, 4)');
   });
 
+  test('uses the singular for counts of one', async ({ page }) => {
+    await multiplyBy(page, '2');
+    await expect(page.getByTestId('multiply-summary')).toHaveText(
+      '2 bits: 1 doubling and 0 additions, instead of 1 addition one at a time.',
+    );
+    await multiplyBy(page, '3');
+    await expect(page.getByTestId('multiply-summary')).toHaveText(
+      '2 bits: 1 doubling and 1 addition, instead of 2 additions one at a time.',
+    );
+    await multiplyBy(page, '1');
+    await expect(page.getByTestId('multiply-summary')).toContainText('1 bit: no doubling');
+    await expect(page.getByTestId('multiply-result')).toHaveText('(5, 1)');
+  });
+
   test('opens the working of a row and closes it again', async ({ page }) => {
     await multiplyBy(page, '5');
     await page.getByRole('button', { name: 'Show the working for step 2', exact: true }).click();
