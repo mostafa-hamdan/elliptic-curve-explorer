@@ -2,8 +2,11 @@
  * Modal dialog built on the browser's own <dialog> element, which already keeps the
  * keyboard focus inside the dialog, closes on Escape and hides the page behind it from
  * screen readers. Used for the settings, the keyboard shortcuts and other pop-ups.
+ * It is drawn at the end of the page (a "portal"), never inside the component that opens
+ * it, so a form inside a dialog is never nested in another form.
  */
 import { useEffect, useId, useRef, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 import { cx } from '../../lib/cx.ts';
 import { Icon } from './Icon.tsx';
 
@@ -48,7 +51,7 @@ export function Dialog({
     if (!open && dialog.open) dialog.close();
   }, [open]);
 
-  return (
+  return createPortal(
     <dialog
       ref={ref}
       aria-labelledby={titleId}
@@ -59,6 +62,9 @@ export function Dialog({
         event.preventDefault();
         onClose();
       }}
+      // React passes events from a portal up to the component that opened it. A form
+      // submitted inside the dialog must not also submit a form around that component.
+      onSubmit={(event) => event.stopPropagation()}
       // A click on the dimmed backdrop lands on the <dialog> element itself.
       onClick={(event) => {
         if (event.target === event.currentTarget) onClose();
@@ -99,6 +105,7 @@ export function Dialog({
           )}
         </div>
       )}
-    </dialog>
+    </dialog>,
+    document.body,
   );
 }

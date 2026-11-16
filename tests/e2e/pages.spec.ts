@@ -137,6 +137,43 @@ const SCREENS: Array<{ name: string; open: (page: Page) => Promise<void> }> = [
     },
   },
   {
+    name: 'signin',
+    open: async (page) => {
+      await page.goto('/signin');
+      await expect(page.getByRole('heading', { level: 1, name: 'Sign in' })).toBeVisible();
+    },
+  },
+  {
+    name: 'signup',
+    open: async (page) => {
+      await page.goto('/signup');
+      await page.getByLabel('Password', { exact: true }).fill('password1234');
+      await expect(page.getByTestId('password-meter')).toContainText('Not accepted');
+    },
+  },
+  {
+    name: 'security',
+    open: async (page) => {
+      await page.goto('/security');
+      await expect(page.getByRole('heading', { level: 1, name: 'Security' })).toBeVisible();
+    },
+  },
+  {
+    name: 'account',
+    open: async (page) => {
+      const email = `shot-${Date.now()}-${Math.random()}@example.com`;
+      await page.goto('/signup');
+      await page.getByLabel('Email').fill(email);
+      await page.getByLabel('Password', { exact: true }).fill('Chord-tangent-reflect-23');
+      await page.getByLabel('Type the password again').fill('Chord-tangent-reflect-23');
+      await page.getByRole('button', { name: 'Create account' }).click();
+      await page.getByLabel('I have saved my recovery codes somewhere safe.').check();
+      await page.getByRole('button', { name: 'Continue to my account' }).click();
+      await page.getByRole('tab', { name: 'Security' }).click();
+      await expect(page.getByTestId('sessions-list').locator('li')).toHaveCount(1);
+    },
+  },
+  {
     name: 'help',
     open: async (page) => {
       await page.goto('/help');
@@ -205,7 +242,7 @@ test.describe('navigation and pages', () => {
       .click();
     await expect(page).toHaveURL(/\/limitations$/);
     await expect(page).toHaveTitle('Limitations · OnCurve');
-    await expect(page.getByTestId('limitations-list').locator('li')).toHaveCount(9);
+    await expect(page.getByTestId('limitations-list').locator('li')).toHaveCount(10);
     await expect(page.getByText('Works for primes up to p = 200,000.')).toBeVisible();
 
     await page

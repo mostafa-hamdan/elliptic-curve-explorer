@@ -7,6 +7,7 @@ import { useEffect } from 'react';
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router';
 import { cx } from '../../lib/cx.ts';
 import { AssistantPanel } from '../../features/assistant/AssistantPanel.tsx';
+import { useAuth } from '../../features/auth/AuthContext.tsx';
 import { useExplorer } from '../../features/explorer/ExplorerContext.tsx';
 import { usePreferences } from '../../features/preferences/PreferencesContext.tsx';
 import { SettingsDialog } from '../../features/preferences/SettingsDialog.tsx';
@@ -114,6 +115,52 @@ function useGlobalShortcuts(): void {
   }, [location.pathname, navigate, setTab, toggleTheme, openPanel, tutorial.active]);
 }
 
+/**
+ * The account control at the right of the top bar: "Sign in" for guests, or a button to
+ * the account page showing who is signed in. Hidden when accounts are not available.
+ */
+function AccountButton() {
+  const { status, user } = useAuth();
+  if (status !== 'ready') return null;
+  if (!user) {
+    return (
+      <NavLink
+        to="/signin"
+        className="inline-flex h-9 shrink-0 items-center gap-2 rounded-lg bg-primary px-3 text-sm font-medium text-primary-ink transition-colors hover:bg-primary-hover"
+      >
+        <Icon name="user" size={16} />
+        <span className="hidden sm:inline">Sign in</span>
+        <span className="sr-only sm:hidden">Sign in</span>
+      </NavLink>
+    );
+  }
+  return (
+    <NavLink
+      to="/account"
+      title={`Signed in as ${user.email}`}
+      className={({ isActive }) =>
+        cx(
+          'inline-flex h-9 shrink-0 items-center gap-2 rounded-lg border px-2.5 text-sm font-medium transition-colors',
+          isActive
+            ? 'border-primary/40 bg-primary-soft text-primary'
+            : 'border-line bg-surface text-ink-soft hover:bg-sunken hover:text-ink',
+        )
+      }
+      data-testid="account-button"
+    >
+      {/* The initial is decoration; the name read out is "Account" plus the email. */}
+      <span
+        aria-hidden="true"
+        className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-xs font-semibold text-primary-ink uppercase"
+      >
+        {user.email.charAt(0)}
+      </span>
+      <span className="sr-only lg:not-sr-only">Account</span>
+      <span className="sr-only"> ({user.email})</span>
+    </NavLink>
+  );
+}
+
 /** Page frame. The current page is rendered where `<Outlet />` sits. */
 export function AppShell() {
   const { theme, toggleTheme } = usePreferences();
@@ -193,6 +240,7 @@ export function AppShell() {
               label={`Switch to ${nextTheme} theme`}
               onClick={toggleTheme}
             />
+            <AccountButton />
           </div>
         </div>
       </header>
@@ -212,6 +260,9 @@ export function AppShell() {
             >
               Keyboard shortcuts
             </button>
+            <NavLink to="/security" className="font-medium text-primary hover:underline">
+              Security
+            </NavLink>
             <NavLink to="/limitations" className="font-medium text-primary hover:underline">
               What this app cannot do
             </NavLink>

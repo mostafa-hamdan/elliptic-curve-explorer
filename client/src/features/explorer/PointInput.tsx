@@ -9,6 +9,7 @@ import { TextField } from '../../components/ui/TextField.tsx';
 import { cx } from '../../lib/cx.ts';
 import { shortNumber } from '../../lib/format.ts';
 import { Icon } from '../../components/ui/Icon.tsx';
+import { SaveButton } from '../account/SaveButton.tsx';
 import { useExplorer } from './ExplorerContext.tsx';
 import type { FieldCheck, PointCheck, PointDraft } from './validation.ts';
 
@@ -119,7 +120,7 @@ export function PointInput({
   showMissing,
   idPrefix,
 }: PointInputProps) {
-  const { curveCheck, listing } = useExplorer();
+  const { state, curveCheck, listing } = useExplorer();
   const id = `${idPrefix}-${which.toLowerCase()}`;
   const list = listing.state.status === 'done' ? listing.state.list : null;
   const pickable = list !== null && list.count <= PICKER_LIMIT;
@@ -197,8 +198,24 @@ export function PointInput({
         />
       </div>
 
-      <div className="mt-2 min-h-5" data-testid={`${id}-status`}>
-        <OnCurveLine check={check} draft={draft} />
+      <div className="mt-2 flex min-h-5 flex-wrap items-start justify-between gap-2">
+        <div className="min-w-0 flex-1" data-testid={`${id}-status`}>
+          <OnCurveLine check={check} draft={draft} />
+        </div>
+        {curveCheck.curve && check.point && (
+          <SaveButton
+            kind="point"
+            label="Save point"
+            data={{
+              p: state.p.trim(),
+              a: state.a.trim(),
+              b: state.b.trim(),
+              x: check.point.x.toString(),
+              y: check.point.y.toString(),
+            }}
+            defaultName={`${which} = (${shortNumber(check.point.x)}, ${shortNumber(check.point.y)})`}
+          />
+        )}
       </div>
 
       {/* Choosing from the list: only offered when the curve is small enough to list. */}

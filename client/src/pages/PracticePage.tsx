@@ -3,7 +3,7 @@
  * types the answers, and the app checks them and points to the first step that is wrong,
  * with a hint. Progress is kept in this browser.
  */
-import { useEffect, useId, useState, type FormEvent } from 'react';
+import { useId, useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router';
 import { Button } from '../components/ui/Button.tsx';
 import { Callout } from '../components/ui/Callout.tsx';
@@ -25,40 +25,11 @@ import {
   type ExerciseKind,
   type PracticeStep,
 } from '../features/practice/exercises.ts';
-
-/** Key in local storage for the practice record. */
-export const PRACTICE_KEY = 'oncurve.practice';
-
-/** How many exercises were tried and fully solved. */
-interface PracticeRecord {
-  attempted: number;
-  solved: number;
-}
-
-/** Read the record, treating anything unexpected (or blocked storage) as a fresh start. */
-function readRecord(): PracticeRecord {
-  try {
-    const value = JSON.parse(
-      window.localStorage.getItem(PRACTICE_KEY) ?? '{}',
-    ) as Partial<PracticeRecord>;
-    const attempted = Number.isInteger(value.attempted) ? Math.max(0, value.attempted!) : 0;
-    const solved = Number.isInteger(value.solved)
-      ? Math.min(attempted, Math.max(0, value.solved!))
-      : 0;
-    return { attempted, solved };
-  } catch {
-    return { attempted: 0, solved: 0 };
-  }
-}
-
-/** Save the record; failures only mean it is not remembered next time. */
-function saveRecord(record: PracticeRecord): void {
-  try {
-    window.localStorage.setItem(PRACTICE_KEY, JSON.stringify(record));
-  } catch {
-    // Storage blocked: the counts still work for this visit.
-  }
-}
+import {
+  readPracticeRecord,
+  savePracticeRecord,
+  type PracticeRecord,
+} from '../features/practice/practiceRecord.ts';
 
 interface StepRowProps {
   step: PracticeStep;
@@ -195,9 +166,13 @@ export function PracticePage() {
   const [result, setResult] = useState<CheckResult | null>(null);
   const [revealed, setRevealed] = useState<Set<string>>(new Set());
   const [counted, setCounted] = useState({ attempted: false, solved: false });
-  const [record, setRecord] = useState<PracticeRecord>(readRecord);
+  const [record, setRecord] = useState<PracticeRecord>(readPracticeRecord);
 
-  useEffect(() => saveRecord(record), [record]);
+  /** Show the new record and keep it (in this browser, and in the account if signed in). */
+  function updateRecord(next: PracticeRecord) {
+    setRecord(next);
+    savePracticeRecord(next);
+  }
 
   /** Start a fresh exercise of the chosen kind and size. */
   function newExercise(nextKind = kind, nextDifficulty = difficulty) {
@@ -213,10 +188,10 @@ export function PracticePage() {
     const outcome = checkAnswers(exercise, answers);
     setResult(outcome);
     // Each exercise counts once as attempted and at most once as solved.
-    setRecord((current) => ({
-      attempted: current.attempted + (counted.attempted ? 0 : 1),
-      solved: current.solved + (outcome.allCorrect && !counted.solved ? 1 : 0),
-    }));
+    updateRecord({
+      attempted: record.attempted + (counted.attempted ? 0 : 1),
+      solved: record.solved + (outcome.allCorrect && !counted.solved ? 1 : 0),
+    });
     setCounted({ attempted: true, solved: counted.solved || outcome.allCorrect });
   }
 
@@ -264,7 +239,7 @@ export function PracticePage() {
             <button
               type="button"
               className="ml-2 cursor-pointer text-note font-medium text-primary hover:underline"
-              onClick={() => setRecord({ attempted: 0, solved: 0 })}
+              onClick={() => updateRecord({ attempted: 0, solved: 0 })}
             >
               Reset
             </button>

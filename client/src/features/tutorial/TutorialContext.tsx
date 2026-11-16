@@ -4,6 +4,7 @@
  */
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
+import { announceProgress } from '../../lib/progress.ts';
 
 /** Key in the browser's local storage, set once the tour has been finished or skipped. */
 export const TOUR_DONE_KEY = 'oncurve.tourDone';
@@ -57,6 +58,7 @@ export function TutorialProvider({ children }: { children: ReactNode }) {
     } catch {
       // Storage blocked: the tour simply may show again on the next visit.
     }
+    announceProgress();
   }, []);
 
   const value = useMemo(

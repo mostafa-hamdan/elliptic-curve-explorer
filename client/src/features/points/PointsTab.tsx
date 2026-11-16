@@ -3,7 +3,7 @@
  * shows the total, the Hasse bound check, a plot and a paged table from which a point
  * can be chosen as P or Q.
  */
-import { useMemo, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { hasseCheck, LIST_POINTS_MAX_P, type Point } from '@shared/ecc/index.ts';
 import { Button } from '../../components/ui/Button.tsx';
 import { Callout } from '../../components/ui/Callout.tsx';
@@ -14,6 +14,7 @@ import { ProgressBar } from '../../components/ui/ProgressBar.tsx';
 import { SelectField } from '../../components/ui/SelectField.tsx';
 import { cx } from '../../lib/cx.ts';
 import { grouped, plain } from '../../lib/format.ts';
+import { useAuth } from '../auth/AuthContext.tsx';
 import { useExplorer } from '../explorer/ExplorerContext.tsx';
 import { PointBadge } from '../explorer/PointInput.tsx';
 import { checkPoint } from '../explorer/validation.ts';
@@ -191,6 +192,20 @@ function PointsTable({ list, selectedP, selectedQ, onSelect }: PointsTableProps)
 export function PointsTab() {
   const { state, curveCheck, listing, setPoint } = useExplorer();
   const curve = curveCheck.curve;
+  const { recordHistory } = useAuth();
+
+  // Each finished search goes into a signed-in user's history once.
+  const recorded = useRef<object | null>(null);
+  const finished = listing.state.status === 'done' ? listing.state.list : null;
+  useEffect(() => {
+    if (!finished || recorded.current === finished) return;
+    recorded.current = finished;
+    recordHistory({
+      operation: 'points',
+      input: { p: state.p.trim(), a: state.a.trim(), b: state.b.trim() },
+      result: `${grouped(finished.count + 1)} points`,
+    });
+  }, [finished, recordHistory, state.p, state.a, state.b]);
 
   const selectedP = useMemo(
     () => checkPoint(curve, state.pointP, 'P').point,

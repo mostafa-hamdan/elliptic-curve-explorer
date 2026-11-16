@@ -15,6 +15,7 @@ import { Button } from '../../components/ui/Button.tsx';
 import { Callout } from '../../components/ui/Callout.tsx';
 import { CardHeader } from '../../components/ui/Card.tsx';
 import { pointText } from '../../lib/format.ts';
+import { useAuth } from '../auth/AuthContext.tsx';
 import { useExplorer } from '../explorer/ExplorerContext.tsx';
 import { PointInput } from '../explorer/PointInput.tsx';
 import { ResultHeader } from '../explorer/ResultHeader.tsx';
@@ -42,6 +43,7 @@ function draftOf(point: Point): PointDraft {
 /** The whole "Add points" tab. */
 export function AddTab() {
   const { state, curveCheck, setPoint, setAddResult } = useExplorer();
+  const { recordHistory } = useAuth();
   const curve = curveCheck.curve;
   // Empty boxes only show "enter a value" after the user has tried to calculate.
   const [attempted, setAttempted] = useState(false);
@@ -80,6 +82,23 @@ export function AddTab() {
       // For a doubling, show Q = P in the boxes so the screen matches what was computed.
       if (doubling) setPoint('Q', draftOf(checkP.point));
       setAddResult({ curve, trace });
+      // Signed-in users get the calculation in their history (guests: nothing is sent).
+      const secondDraft = doubling ? state.pointP : state.pointQ;
+      recordHistory({
+        operation: 'add',
+        input: {
+          p: state.p.trim(),
+          a: state.a.trim(),
+          b: state.b.trim(),
+          px: state.pointP.x.trim(),
+          py: state.pointP.y.trim(),
+          pInfinity: state.pointP.infinity,
+          qx: secondDraft.x.trim(),
+          qy: secondDraft.y.trim(),
+          qInfinity: secondDraft.infinity,
+        },
+        result: pointText(trace.result),
+      });
       setProblem(null);
     } catch (error) {
       if (!isEccError(error)) throw error;

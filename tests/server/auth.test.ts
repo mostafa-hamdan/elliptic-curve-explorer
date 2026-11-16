@@ -560,3 +560,20 @@ describe('security headers', () => {
     await hosted.app.close();
   });
 });
+
+describe('answers to the website', () => {
+  it('sends expected refusals as 200 with the real status in a header, for the website only', async () => {
+    const browserStyle = await app.inject({
+      method: 'POST',
+      url: '/api/auth/signout',
+      headers: { 'x-oncurve-client': 'web' },
+    });
+    expect(browserStyle.statusCode).toBe(200);
+    expect(browserStyle.headers['x-oncurve-status']).toBe('403');
+    expect(browserStyle.json().error).toMatch(/security token/);
+
+    const plain = await app.inject({ method: 'POST', url: '/api/auth/signout' });
+    expect(plain.statusCode).toBe(403);
+    expect(plain.headers['x-oncurve-status']).toBeUndefined();
+  });
+});

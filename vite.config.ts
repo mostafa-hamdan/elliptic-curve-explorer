@@ -26,6 +26,9 @@ export default defineConfig({
     // Never inline files as data: URLs, so the strict Content-Security-Policy (fonts and
     // images only from this site) holds for every file.
     assetsInlineLimit: 0,
+    // The password rules carry a 49,000-word list (about 1.7 MB). That chunk is loaded only
+    // when a password form opens, so the size warning is raised above it.
+    chunkSizeWarningLimit: 2000,
   },
   worker: { format: 'es' },
   server: {

@@ -117,12 +117,22 @@ const LIMITATIONS: Limitation[] = [
     ),
   },
   {
-    title: 'Nothing is saved',
-    limit: <>Reloading the page starts again from the example curve.</>,
+    title: 'Saving needs an account',
+    limit: <>As a guest, reloading the page starts again from the example curve.</>,
     reason: (
       <>
-        All calculations run in your browser and nothing is stored or sent anywhere. Only the choice
-        of light or dark theme is remembered on this device.
+        Calculations run in your browser. Only the theme, text size and practice record are
+        remembered on this device. Signing in adds saved curves and points and a history.
+      </>
+    ),
+  },
+  {
+    title: 'No email',
+    limit: <>The app never sends email, so a lost password is reset with a recovery code.</>,
+    reason: (
+      <>
+        Each account gets ten one-time recovery codes when it is created. Someone who loses both
+        their password and all their codes cannot get back in; nobody can reset it for them.
       </>
     ),
   },

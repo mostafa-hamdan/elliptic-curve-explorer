@@ -73,6 +73,11 @@ const QUESTIONS: ReadonlyArray<{ question: string; answer: ReactNode }> = [
       'The group of points always contains O, so N counts it. Hasse’s theorem says N is close to p + 1: |N − (p + 1)| ≤ 2√p. The app checks this for every curve it lists.',
   },
   {
+    question: 'I forgot my password. What now?',
+    answer:
+      'Use one of the ten recovery codes you saved when you created the account, on the "Forgot your password?" page. The app never sends email, so the codes are the only way back in.',
+  },
+  {
     question: 'Why can I not list the points of secp256k1?',
     answer: (
       <>
@@ -95,7 +100,7 @@ const QUESTIONS: ReadonlyArray<{ question: string; answer: ReactNode }> = [
   {
     question: 'Is my work saved?',
     answer:
-      'Your theme and text size are remembered in this browser. Everything else stays on this page until you reload it. Nothing is sent anywhere.',
+      'As a guest, your theme, text size and practice record are remembered in this browser; calculations stay on the page until you reload it. Sign in (it is free) to save curves and points and keep a history of every calculation.',
   },
 ];
 

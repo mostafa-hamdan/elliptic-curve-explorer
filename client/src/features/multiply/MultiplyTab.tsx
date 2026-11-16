@@ -22,6 +22,7 @@ import { TextField } from '../../components/ui/TextField.tsx';
 import { cx } from '../../lib/cx.ts';
 import { plain, pointText, shortNumber } from '../../lib/format.ts';
 import { AdditionSteps } from '../add/AdditionSteps.tsx';
+import { useAuth } from '../auth/AuthContext.tsx';
 import { useExplorer } from '../explorer/ExplorerContext.tsx';
 import { PointInput } from '../explorer/PointInput.tsx';
 import { ResultHeader } from '../explorer/ResultHeader.tsx';
@@ -256,6 +257,7 @@ function MultiplyResult({ curve, trace }: MultiplyResultProps) {
 /** The whole "Multiply" tab. */
 export function MultiplyTab() {
   const { state, curveCheck, setPoint, setScalar, setMultiplyResult } = useExplorer();
+  const { recordHistory } = useAuth();
   const curve = curveCheck.curve;
   // Empty boxes only show "enter a value" after the user has tried to calculate.
   const [attempted, setAttempted] = useState(false);
@@ -284,7 +286,22 @@ export function MultiplyTab() {
       return;
     }
     try {
-      setMultiplyResult({ curve, trace: multiplyWithSteps(curve, checkK.value, checkP.point) });
+      const trace = multiplyWithSteps(curve, checkK.value, checkP.point);
+      setMultiplyResult({ curve, trace });
+      // Signed-in users get the calculation in their history (guests: nothing is sent).
+      recordHistory({
+        operation: 'multiply',
+        input: {
+          p: state.p.trim(),
+          a: state.a.trim(),
+          b: state.b.trim(),
+          px: state.pointP.x.trim(),
+          py: state.pointP.y.trim(),
+          pInfinity: state.pointP.infinity,
+          k: state.k.trim(),
+        },
+        result: pointText(trace.result),
+      });
       setProblem(null);
     } catch (error) {
       if (!isEccError(error)) throw error;

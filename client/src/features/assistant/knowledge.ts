@@ -226,6 +226,25 @@ export const TOPICS: ReadonlyArray<Topic> = [
       'Every result can be exported:\n- **Download … (CSV)** under the points table, an addition or a multiplication, for Excel or any spreadsheet.\n- **PNG** above the plot saves the picture.\n- **Printable report** collects everything calculated so far; print it or save it as a PDF.',
   },
   {
+    id: 'account',
+    keywords: [
+      'account',
+      'sign in',
+      'sign up',
+      'log in',
+      'login',
+      'register',
+      'saved',
+      'history',
+      'forgot',
+      'two-factor',
+      '2fa',
+      'recovery code',
+    ],
+    answer:
+      'An account is optional and free. Signed in, you can **save** curves and points and see a **history** of every calculation (Account → My work).\n- Lost password: use one of your ten **recovery codes** on the "Forgot your password?" page; the app never sends email.\n- Turn on **two-factor authentication** in Account → Security for extra protection.',
+  },
+  {
     id: 'how-to',
     keywords: ['how to use', 'get started', 'where do i start', 'how do i use', 'tour', 'tutorial'],
     answer:

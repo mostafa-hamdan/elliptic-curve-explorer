@@ -10,6 +10,7 @@ import { Card, CardHeader } from '../../components/ui/Card.tsx';
 import { SelectField } from '../../components/ui/SelectField.tsx';
 import { TextField } from '../../components/ui/TextField.tsx';
 import { equationText, shortNumber } from '../../lib/format.ts';
+import { SaveButton } from '../account/SaveButton.tsx';
 import { useExplorer } from '../explorer/ExplorerContext.tsx';
 import type { CurveCheck, FieldCheck } from '../explorer/validation.ts';
 
@@ -173,6 +174,14 @@ export function CurvePanel() {
         <CurveStatus check={curveCheck} />
 
         <div className="flex flex-wrap justify-end gap-2 border-t border-line pt-4">
+          {curveCheck.curve && (
+            <SaveButton
+              kind="curve"
+              label="Save curve"
+              data={{ p: state.p.trim(), a: state.a.trim(), b: state.b.trim() }}
+              defaultName={curveLabel(curveCheck.curve, curveCheck.bits)}
+            />
+          )}
           <Button
             variant="ghost"
             size="sm"

@@ -119,6 +119,20 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
     if (request.url.startsWith('/api/')) request.auth = await loadAuth(db, config, request);
   });
 
+  // Browsers print every 4xx answer to fetch() as a red "Failed to load resource" error in
+  // the developer console, even when it is an expected outcome such as a wrong password.
+  // For the website's own requests (marked with X-OnCurve-Client) such refusals are sent
+  // as 200 with the real status in X-OnCurve-Status; the body still carries the message.
+  // Every other client, and every test of the API, sees the true status code.
+  app.addHook('onSend', async (request, reply, payload) => {
+    const status = reply.statusCode;
+    if (request.headers['x-oncurve-client'] === 'web' && status >= 400 && status < 500) {
+      reply.header('x-oncurve-status', String(status));
+      reply.code(200);
+    }
+    return payload;
+  });
+
   // Bad input gets a clear 400; anything unexpected is logged and answered without details.
   app.setErrorHandler((error: FastifyError, request, reply) => {
     if (error.validation) {
