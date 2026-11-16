@@ -8,9 +8,10 @@
     "node": ">=22"
   },
   "scripts": {
+    "setup": "node scripts/setup.mjs",
+    "start": "node scripts/start.mjs",
     "dev": "vite",
     "build": "vite build",
-    "start": "npm run build && tsx server/index.ts",
     "serve": "tsx server/index.ts",
     "typecheck": "tsc -p client/tsconfig.json && tsc -p server/tsconfig.json && tsc -p tsconfig.json",
     "lint": "eslint . && prettier --check .",
