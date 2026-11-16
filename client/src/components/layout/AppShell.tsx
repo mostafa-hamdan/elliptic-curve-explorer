@@ -21,6 +21,7 @@ import { Logo } from './Logo.tsx';
 /** Pages listed in the top bar, in order. */
 export const NAV_ITEMS: ReadonlyArray<{ to: string; label: string }> = [
   { to: '/', label: 'Explorer' },
+  { to: '/learn', label: 'Learn' },
   { to: '/help', label: 'Help' },
   { to: '/limitations', label: 'Limitations' },
 ];

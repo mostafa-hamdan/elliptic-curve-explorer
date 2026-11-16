@@ -15,6 +15,7 @@ import {
 } from '@shared/ecc/index.ts';
 import { Button } from '../../components/ui/Button.tsx';
 import { Callout } from '../../components/ui/Callout.tsx';
+import { Dialog } from '../../components/ui/Dialog.tsx';
 import { CardHeader } from '../../components/ui/Card.tsx';
 import { Icon } from '../../components/ui/Icon.tsx';
 import { TextField } from '../../components/ui/TextField.tsx';
@@ -25,6 +26,7 @@ import { useExplorer } from '../explorer/ExplorerContext.tsx';
 import { PointInput } from '../explorer/PointInput.tsx';
 import { ResultHeader } from '../explorer/ResultHeader.tsx';
 import { checkPoint, checkScalar, pointProblem } from '../explorer/validation.ts';
+import { MultiplesAnimation } from './MultiplesAnimation.tsx';
 import { multiplySummary } from './summary.ts';
 
 /** What each kind of row does, in words. */
@@ -255,6 +257,7 @@ export function MultiplyTab() {
     setRaised(message === null ? null : { key: inputsKey, message });
 
   const checkP = useMemo(() => checkPoint(curve, state.pointP, 'P'), [curve, state.pointP]);
+  const [animating, setAnimating] = useState(false);
   const checkK = useMemo(() => checkScalar(state.k), [state.k]);
 
   function handleSubmit(event: FormEvent) {
@@ -329,10 +332,34 @@ export function MultiplyTab() {
           </div>
         </div>
 
-        <Button type="submit" variant="primary" icon="play">
-          Calculate kP
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button type="submit" variant="primary" icon="play">
+            Calculate kP
+          </Button>
+          <Button
+            icon="target"
+            disabled={!curve || checkP.point === undefined}
+            title="Watch P, 2P, 3P, … until they return to O"
+            onClick={() => setAnimating(true)}
+          >
+            Animate multiples of P
+          </Button>
+        </div>
       </form>
+
+      {curve && checkP.point !== undefined && (
+        <Dialog
+          open={animating}
+          onClose={() => setAnimating(false)}
+          title="Multiples of P"
+          description={`P = ${pointText(checkP.point, true)}: adding P again and again until the sum is O.`}
+          widthClass="max-w-4xl"
+          testId="multiples-dialog"
+        >
+          {/* Mounted only while open, so every opening starts again from 1P. */}
+          {animating && <MultiplesAnimation curve={curve} point={checkP.point} />}
+        </Dialog>
+      )}
 
       {problem !== null && (
         <Callout

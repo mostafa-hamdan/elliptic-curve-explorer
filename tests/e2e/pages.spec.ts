@@ -92,6 +92,29 @@ const SCREENS: Array<{ name: string; open: (page: Page) => Promise<void> }> = [
     },
   },
   {
+    name: 'learn',
+    open: async (page) => {
+      await page.goto('/learn');
+      await expect(page.getByRole('heading', { level: 1, name: 'Learn' })).toBeVisible();
+    },
+  },
+  {
+    name: 'animation',
+    open: async (page) => {
+      await openExplorer(page);
+      await page.getByLabel('Example curves').selectOption({ label: 'E17(2, 2)' });
+      await openTab(page, 'Multiply');
+      await page.getByRole('button', { name: 'Animate multiples of P' }).click();
+      await page.getByTestId('multiples-dialog').getByRole('button', { name: 'Pause' }).click();
+      for (let step = 0; step < 6; step += 1) {
+        await page
+          .getByTestId('multiples-dialog')
+          .getByRole('button', { name: 'Next multiple' })
+          .click();
+      }
+    },
+  },
+  {
     name: 'help',
     open: async (page) => {
       await page.goto('/help');

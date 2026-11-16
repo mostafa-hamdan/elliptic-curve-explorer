@@ -29,14 +29,14 @@ export function ChoiceGroup<Id extends string>({
   return (
     <fieldset className="min-w-0" data-testid={testId}>
       <legend className="mb-1.5 text-note font-medium text-ink-soft">{legend}</legend>
-      <div className="flex flex-wrap gap-1 rounded-xl border border-line bg-sunken p-1">
+      <div className="flex gap-1 rounded-xl border border-line bg-sunken p-1">
         {options.map((option) => {
           const checked = option.id === value;
           return (
             <label
               key={option.id}
               className={cx(
-                'relative flex h-9 min-w-20 flex-1 cursor-pointer items-center justify-center rounded-lg px-3 text-sm font-medium transition-colors',
+                'relative flex h-9 min-w-14 flex-1 cursor-pointer items-center justify-center rounded-lg px-3 text-sm font-medium transition-colors',
                 'has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-primary',
                 checked ? 'bg-surface text-primary shadow-card' : 'text-ink-soft hover:text-ink',
               )}

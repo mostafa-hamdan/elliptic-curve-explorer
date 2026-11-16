@@ -11,6 +11,7 @@ import { ShellProvider } from './features/shell/ShellContext.tsx';
 import { TutorialProvider } from './features/tutorial/TutorialContext.tsx';
 import { ExplorerPage } from './pages/ExplorerPage.tsx';
 import { HelpPage } from './pages/HelpPage.tsx';
+import { LearnPage } from './pages/LearnPage.tsx';
 import { LimitationsPage } from './pages/LimitationsPage.tsx';
 import { NotFoundPage } from './pages/NotFoundPage.tsx';
 
@@ -25,6 +26,7 @@ export function App() {
               <Routes>
                 <Route element={<AppShell />}>
                   <Route index element={<ExplorerPage />} />
+                  <Route path="learn" element={<LearnPage />} />
                   <Route path="help" element={<HelpPage />} />
                   <Route path="limitations" element={<LimitationsPage />} />
                   <Route path="*" element={<NotFoundPage />} />

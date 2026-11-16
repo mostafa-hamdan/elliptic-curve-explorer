@@ -354,7 +354,13 @@ function PointsResult({ list, selectedP, selectedQ, highlights, onSelect }: Poin
       </div>
 
       <div className="grid gap-5 lg:grid-cols-2">
-        <PointsPlot list={list} highlights={highlights} />
+        <PointsPlot
+          // A new curve starts with the whole field in view.
+          key={`${list.curve.p}:${list.curve.a}:${list.curve.b}`}
+          list={list}
+          highlights={highlights}
+          onPick={onSelect}
+        />
         <PointsTable
           // A new list starts again from page 1.
           key={`${list.curve.p}:${list.curve.a}:${list.curve.b}:${list.elapsedMs}`}
