@@ -10,6 +10,8 @@ import { curveName, type Point } from '@shared/ecc/index.ts';
 import { Button } from '../../components/ui/Button.tsx';
 import { ChoiceGroup } from '../../components/ui/ChoiceGroup.tsx';
 import { count, grouped } from '../../lib/format.ts';
+import { downloadCanvas } from '../../lib/download.ts';
+import { fileStem } from '../export/csv.ts';
 import { useTheme } from '../preferences/PreferencesContext.tsx';
 import type { PointList } from './usePointListing.ts';
 
@@ -451,6 +453,23 @@ export function PointsPlot({ list, highlights, onPick }: PointsPlotProps) {
             disabled={!zoomed}
             onClick={() => zoom(2)}
           />
+          <Button
+            size="sm"
+            icon="download"
+            title="Save the plot as a PNG picture"
+            onClick={() => {
+              const canvas = canvasRef.current;
+              if (canvas) {
+                void downloadCanvas(
+                  canvas,
+                  token('--oc-surface'),
+                  `oncurve-${fileStem(list.curve)}-plot.png`,
+                ).catch(() => undefined);
+              }
+            }}
+          >
+            PNG
+          </Button>
           <Button
             size="sm"
             icon="reset"

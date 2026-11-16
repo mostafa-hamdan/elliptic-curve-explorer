@@ -124,6 +124,19 @@ const SCREENS: Array<{ name: string; open: (page: Page) => Promise<void> }> = [
     },
   },
   {
+    name: 'report',
+    open: async (page) => {
+      await openExplorer(page);
+      await openTab(page, 'Add points');
+      await page.getByRole('button', { name: 'Calculate P + Q' }).click();
+      await page
+        .getByTestId('add-export')
+        .getByRole('button', { name: 'Printable report' })
+        .click();
+      await expect(page.getByTestId('report-add-result')).toBeVisible();
+    },
+  },
+  {
     name: 'help',
     open: async (page) => {
       await page.goto('/help');

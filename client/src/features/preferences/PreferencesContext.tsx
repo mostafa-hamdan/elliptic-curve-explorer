@@ -70,6 +70,19 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
     document.documentElement.setAttribute('data-text-size', textSize);
   }, [textSize]);
 
+  // Paper is white: print in the light theme whatever is on screen, then switch back.
+  useEffect(() => {
+    const root = document.documentElement;
+    const toLight = () => root.setAttribute('data-theme', 'light');
+    const restore = () => root.setAttribute('data-theme', theme);
+    window.addEventListener('beforeprint', toLight);
+    window.addEventListener('afterprint', restore);
+    return () => {
+      window.removeEventListener('beforeprint', toLight);
+      window.removeEventListener('afterprint', restore);
+    };
+  }, [theme]);
+
   const setTheme = useCallback((next: Theme) => {
     // Saved only on an explicit choice, so until then the app follows the system setting.
     remember(STORAGE_KEYS.theme, next);

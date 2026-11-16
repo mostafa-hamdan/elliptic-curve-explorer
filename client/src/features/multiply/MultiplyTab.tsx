@@ -28,6 +28,8 @@ import { ResultHeader } from '../explorer/ResultHeader.tsx';
 import { checkPoint, checkScalar, pointProblem } from '../explorer/validation.ts';
 import { MultiplesAnimation } from './MultiplesAnimation.tsx';
 import { multiplySummary } from './summary.ts';
+import { fileStem, multiplyCsv } from '../export/csv.ts';
+import { ResultActions } from '../export/ResultActions.tsx';
 
 /** What each kind of row does, in words. */
 const OPERATION_TEXT: Record<MultiplyRow['operation'], string> = {
@@ -202,6 +204,14 @@ function MultiplyResult({ curve, trace }: MultiplyResultProps) {
             k = {kText}, P = {pointText(trace.p)}
           </span>
         }
+      />
+      <ResultActions
+        csvLabel="Download table (CSV)"
+        testId="multiply-export"
+        makeCsv={() => ({
+          text: multiplyCsv(trace),
+          filename: `oncurve-${fileStem(curve)}-multiply.csv`,
+        })}
       />
 
       {trace.rows.length === 0 ? (

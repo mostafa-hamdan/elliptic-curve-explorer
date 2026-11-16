@@ -214,6 +214,18 @@ export const TOPICS: ReadonlyArray<Topic> = [
       'Listing every point works up to p = 200,000 (about a second). Adding and multiplying work for any prime up to 1024 bits. The full list is on the **Limitations** page.',
   },
   {
+    id: 'practice',
+    keywords: ['practice', 'exercise', 'exam', 'train', 'quiz', 'test myself'],
+    answer:
+      'Open **Practice** in the top bar. It sets a small problem (add, double, inverse, on-curve check or kP), you type each step, and **Check my answers** marks every step and points to the first wrong one with a hint. **Show how** reveals the working for that step only.',
+  },
+  {
+    id: 'export',
+    keywords: ['export', 'download', 'csv', 'png', 'print', 'pdf', 'report', 'save'],
+    answer:
+      'Every result can be exported:\n- **Download … (CSV)** under the points table, an addition or a multiplication, for Excel or any spreadsheet.\n- **PNG** above the plot saves the picture.\n- **Printable report** collects everything calculated so far; print it or save it as a PDF.',
+  },
+  {
     id: 'how-to',
     keywords: ['how to use', 'get started', 'where do i start', 'how do i use', 'tour', 'tutorial'],
     answer:

@@ -18,6 +18,8 @@ import { useExplorer } from '../explorer/ExplorerContext.tsx';
 import { PointBadge } from '../explorer/PointInput.tsx';
 import { checkPoint } from '../explorer/validation.ts';
 import { PointsPlot, type PlotHighlight } from './PointsPlot.tsx';
+import { fileStem, pointsCsv } from '../export/csv.ts';
+import { ResultActions } from '../export/ResultActions.tsx';
 import type { PointList } from './usePointListing.ts';
 
 /** Choices for how many rows the table shows at once. */
@@ -351,6 +353,16 @@ function PointsResult({ list, selectedP, selectedQ, highlights, onSelect }: Poin
           <PointBadge which="Q" />
           <span className="font-mono">{describeSelection(selectedQ)}</span>
         </span>
+        <div className="ml-auto">
+          <ResultActions
+            csvLabel="Download points (CSV)"
+            testId="points-export"
+            makeCsv={() => ({
+              text: pointsCsv(list),
+              filename: `oncurve-${fileStem(list.curve)}-points.csv`,
+            })}
+          />
+        </div>
       </div>
 
       <div className="grid gap-5 lg:grid-cols-2">

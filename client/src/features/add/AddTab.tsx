@@ -20,6 +20,8 @@ import { PointInput } from '../explorer/PointInput.tsx';
 import { ResultHeader } from '../explorer/ResultHeader.tsx';
 import { checkPoint, pointProblem, type PointDraft } from '../explorer/validation.ts';
 import { AdditionSteps } from './AdditionSteps.tsx';
+import { additionCsv, fileStem } from '../export/csv.ts';
+import { ResultActions } from '../export/ResultActions.tsx';
 
 /** Plain-English name of each case of the addition law. */
 const RULE_NAMES: Record<AdditionCase, string> = {
@@ -181,6 +183,14 @@ export function AddTab() {
                 P = {pointText(result.trace.p)}, Q = {pointText(result.trace.q)}
               </span>
             }
+          />
+          <ResultActions
+            csvLabel="Download steps (CSV)"
+            testId="add-export"
+            makeCsv={() => ({
+              text: additionCsv(result.curve, result.trace),
+              filename: `oncurve-${fileStem(result.curve)}-addition.csv`,
+            })}
           />
           {stale && (
             <Callout tone="warning" data-testid="add-stale">

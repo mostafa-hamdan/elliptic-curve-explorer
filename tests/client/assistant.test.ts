@@ -39,6 +39,8 @@ describe('offline helper: built-in topics', () => {
     ['how does ECDH key exchange work', /Alice/],
     ['what is secp256k1', /Bitcoin/],
     ['can I type hex?', /0x/],
+    ['How do I practise for the exam?', /Check my answers/],
+    ['can I download the table as csv?', /Printable report/],
   ];
   for (const [question, expected] of cases) {
     it(`answers "${question}"`, () => {
