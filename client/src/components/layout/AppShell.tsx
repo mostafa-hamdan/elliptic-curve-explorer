@@ -22,6 +22,7 @@ import { Logo } from './Logo.tsx';
 export const NAV_ITEMS: ReadonlyArray<{ to: string; label: string }> = [
   { to: '/', label: 'Explorer' },
   { to: '/learn', label: 'Learn' },
+  { to: '/practice', label: 'Practice' },
   { to: '/help', label: 'Help' },
   { to: '/limitations', label: 'Limitations' },
 ];

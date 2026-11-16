@@ -115,6 +115,15 @@ const SCREENS: Array<{ name: string; open: (page: Page) => Promise<void> }> = [
     },
   },
   {
+    name: 'practice',
+    open: async (page) => {
+      await page.goto('/practice');
+      await page.getByTestId('step-numerator').getByRole('textbox').fill('0');
+      await page.getByRole('button', { name: 'Check my answers' }).click();
+      await expect(page.getByTestId('practice-summary')).toBeVisible();
+    },
+  },
+  {
     name: 'help',
     open: async (page) => {
       await page.goto('/help');

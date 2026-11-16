@@ -14,6 +14,7 @@ import { HelpPage } from './pages/HelpPage.tsx';
 import { LearnPage } from './pages/LearnPage.tsx';
 import { LimitationsPage } from './pages/LimitationsPage.tsx';
 import { NotFoundPage } from './pages/NotFoundPage.tsx';
+import { PracticePage } from './pages/PracticePage.tsx';
 
 /** The whole application. */
 export function App() {
@@ -27,6 +28,7 @@ export function App() {
                 <Route element={<AppShell />}>
                   <Route index element={<ExplorerPage />} />
                   <Route path="learn" element={<LearnPage />} />
+                  <Route path="practice" element={<PracticePage />} />
                   <Route path="help" element={<HelpPage />} />
                   <Route path="limitations" element={<LimitationsPage />} />
                   <Route path="*" element={<NotFoundPage />} />
