@@ -103,27 +103,33 @@ export function TourOverlay() {
       });
     };
 
-    // Wait two frames so a tab that was just switched has drawn its content.
-    frame = requestAnimationFrame(() => {
-      frame = requestAnimationFrame(() => {
-        if (step.target === null) {
-          setBox(null);
-          setReady(true);
-          return;
-        }
-        const element = document.querySelector(`[data-tour="${step.target}"]`);
-        if (!element) {
-          // This part is not on screen (for example a feature that is switched off): skip it.
-          const target = stepIndex + direction.current;
-          if (target < 0 || target >= TOUR_STEPS.length) finish();
-          else goTo(target);
-          return;
-        }
-        element.scrollIntoView({ block: 'center', behavior: 'instant' });
-        measure(element);
+    // Look for the target on every frame for up to a second: a tab that was just switched
+    // may take a few frames to draw, especially on a slow or busy computer. Only a part
+    // that is still missing after that is skipped.
+    const started = performance.now();
+    const look = () => {
+      if (step.target === null) {
+        setBox(null);
         setReady(true);
-      });
-    });
+        return;
+      }
+      const element = document.querySelector(`[data-tour="${step.target}"]`);
+      if (!element) {
+        if (performance.now() - started < 1000) {
+          frame = requestAnimationFrame(look);
+          return;
+        }
+        // This part is not on screen (for example a feature that is switched off): skip it.
+        const target = stepIndex + direction.current;
+        if (target < 0 || target >= TOUR_STEPS.length) finish();
+        else goTo(target);
+        return;
+      }
+      element.scrollIntoView({ block: 'center', behavior: 'instant' });
+      measure(element);
+      setReady(true);
+    };
+    frame = requestAnimationFrame(look);
 
     // Follow the target when the window is resized or the page scrolls.
     const follow = () => {
