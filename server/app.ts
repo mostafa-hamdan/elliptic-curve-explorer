@@ -11,7 +11,9 @@ import { fileURLToPath } from 'node:url';
 import fastifyCookie from '@fastify/cookie';
 import fastifyHelmet from '@fastify/helmet';
 import fastifyStatic from '@fastify/static';
+import Anthropic from '@anthropic-ai/sdk';
 import Fastify, { type FastifyError, type FastifyInstance } from 'fastify';
+import type { AssistantClient } from './assistant/run.ts';
 import { csrfIsValid, loadAuth } from './auth/sessions.ts';
 import type { ServerConfig } from './config.ts';
 import type { Database } from './db/client.ts';
@@ -34,6 +36,8 @@ export interface BuildAppOptions {
   clientDir?: string;
   /** Print one log line per request. Off by default so tests stay quiet. */
   logger?: boolean;
+  /** AI client to use instead of the real one (tests pass a stand-in). */
+  aiClient?: AssistantClient | null;
 }
 
 /** JSON shape of the health reply, enforced by Fastify on the way out. */
@@ -72,7 +76,14 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
   const clientDir = options.clientDir ?? DEFAULT_CLIENT_DIR;
   const hasClient = existsSync(clientDir);
 
-  app.decorate('ctx', { db, config });
+  // The AI client exists only when a key is set; the key never leaves the server.
+  const ai =
+    options.aiClient !== undefined
+      ? options.aiClient
+      : config.anthropicApiKey
+        ? new Anthropic({ apiKey: config.anthropicApiKey, maxRetries: 1, timeout: 60_000 })
+        : null;
+  app.decorate('ctx', { db, config, ai });
   app.decorateRequest('auth', null);
   await app.register(fastifyCookie);
 

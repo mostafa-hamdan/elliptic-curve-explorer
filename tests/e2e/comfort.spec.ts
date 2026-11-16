@@ -259,3 +259,46 @@ test.describe('assistant (offline helper)', () => {
     await expect(panel.getByTestId('assistant-answer')).toHaveCount(0);
   });
 });
+
+test.describe('assistant (AI mode, with the server answers simulated)', () => {
+  test('uses AI mode when available and falls back to the offline helper on failure', async ({
+    page,
+  }) => {
+    let calls = 0;
+    await page.route('**/api/assistant/status', (route) =>
+      route.fulfill({ json: { ai: true, reason: 'AI mode is ready.' } }),
+    );
+    await page.route('**/api/assistant', async (route) => {
+      calls += 1;
+      const body = route.request().postDataJSON() as { question: string; context: string };
+      expect(body.context).toContain('curve E23(1, 1)');
+      await route.fulfill({
+        json:
+          calls === 1
+            ? { answer: 'The sum is **(17, 20)**.', declined: false }
+            : { fallback: 'The AI service cannot be reached (no internet?).' },
+      });
+    });
+
+    await openExplorer(page);
+    await page.getByRole('button', { name: 'Assistant' }).click();
+    const panel = page.getByTestId('assistant');
+    await expect(panel.getByTestId('assistant-mode')).toContainText('AI mode');
+
+    const input = page.getByLabel('Your question');
+    await input.fill('What is (3, 10) + (9, 7)?');
+    await input.press('Enter');
+    await expect(panel.getByTestId('assistant-answer').last()).toContainText(
+      'The sum is (17, 20).',
+    );
+    await expect(panel.getByTestId('assistant-answer').last()).toContainText('AI answer');
+
+    await input.fill('What is the point at infinity?');
+    await input.press('Enter');
+    const fallback = panel.getByTestId('assistant-answer').last();
+    await expect(fallback.getByTestId('assistant-notice')).toContainText(
+      'Answered by the offline helper',
+    );
+    await expect(fallback).toContainText('identity of the group');
+  });
+});

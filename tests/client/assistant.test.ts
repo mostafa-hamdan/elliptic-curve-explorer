@@ -12,6 +12,7 @@ import {
   SUGGESTIONS,
   type HelperContext,
 } from '../../client/src/features/assistant/offlineHelper.ts';
+import { describeWork } from '../../client/src/features/assistant/workContext.ts';
 
 const E23 = createCurve(23n, 1n, 1n);
 const E17 = createCurve(17n, 2n, 2n);
@@ -189,5 +190,37 @@ describe('assistant markdown', () => {
   it('treats HTML as plain text', () => {
     const spans = parseInline('<img src=x onerror=alert(1)> **<b>**');
     expect(spans.map((span) => span.text)).toEqual(['<img src=x onerror=alert(1)> ', '<b>']);
+  });
+});
+
+describe('work description for AI mode', () => {
+  it('describes the curve, points, k and the latest results briefly', () => {
+    const trace = addWithSteps(E23, { x: 3n, y: 10n }, { x: 9n, y: 7n });
+    const text = describeWork(
+      { ...EMPTY, add: { curve: E23, trace }, tab: 'add' },
+      {
+        pointP: { x: '3', y: '10', infinity: false },
+        pointQ: { x: '', y: '', infinity: true },
+        k: '13',
+      },
+    );
+    expect(text).toBe(
+      'curve E23(1, 1); P = (3, 10); Q = O; k = 13; open tab: add; last addition: (3, 10) + (9, 7) = (17, 20).',
+    );
+  });
+
+  it('is empty without a curve and stays short for huge numbers', () => {
+    const inputs = {
+      pointP: { x: '', y: '', infinity: false },
+      pointQ: { x: '', y: '', infinity: false },
+      k: '',
+    };
+    expect(describeWork({ ...EMPTY, curve: null }, inputs)).toBe('');
+    const big = describeWork(
+      { ...EMPTY, curve: { p: 2n ** 255n - 19n, a: 0n, b: 7n } },
+      { ...inputs, k: '9'.repeat(300) },
+    );
+    expect(big.length).toBeLessThanOrEqual(900);
+    expect(big).toContain('255-bit p');
   });
 });

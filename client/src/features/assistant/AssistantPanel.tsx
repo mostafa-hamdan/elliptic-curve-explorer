@@ -1,9 +1,13 @@
 /**
  * The assistant: a side panel where the user asks questions about elliptic curves and
- * this app, or asks for an explanation of their last result. Answers come from the
+ * this app, or asks for an explanation of their last result. When the server has an AI
+ * key and the user is signed in, answers come from AI mode (Claude Haiku 5.5, with every
+ * number computed by the engine); otherwise, and whenever AI mode fails, they come from the
  * offline helper, which needs no network and no key.
  */
 import { useEffect, useId, useRef, useState, type FormEvent, type KeyboardEvent } from 'react';
+import { api } from '../../lib/api.ts';
+import { useAuth } from '../auth/AuthContext.tsx';
 import { Button } from '../../components/ui/Button.tsx';
 import { Icon } from '../../components/ui/Icon.tsx';
 import { cx } from '../../lib/cx.ts';
@@ -16,12 +20,30 @@ import {
   SUGGESTIONS,
   type HelperContext,
 } from './offlineHelper.ts';
+import { describeWork } from './workContext.ts';
 
 /** One message in the conversation. */
 interface Message {
   id: number;
   role: 'user' | 'assistant';
   text: string;
+  /** Who answered: AI mode or the offline helper (only for answers). */
+  source?: 'ai' | 'offline';
+  /** A short note shown above an answer, for example why AI mode was not used. */
+  notice?: string;
+}
+
+/** What the server says about AI mode. */
+interface AiStatus {
+  ai: boolean;
+  reason: string;
+}
+
+/** Earlier turns sent with an AI question: the last ten, as plain text. */
+function historyFor(messages: Message[]) {
+  return messages
+    .slice(-10)
+    .map((message) => ({ role: message.role, text: message.text.slice(0, 6000) }));
 }
 
 /** Collect what the helper needs to know about the user's current work. */
@@ -43,6 +65,10 @@ export function AssistantPanel() {
   const { panel, closePanel } = useShell();
   const open = panel === 'assistant';
   const context = useHelperContext();
+  const { state } = useExplorer();
+  const { status, user } = useAuth();
+  const [aiStatus, setAiStatus] = useState<AiStatus | null>(null);
+  const [busy, setBusy] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [draft, setDraft] = useState('');
   const nextId = useRef(1);
@@ -56,38 +82,97 @@ export function AssistantPanel() {
     if (open) inputRef.current?.focus();
   }, [open]);
 
+  // Ask the server whether AI mode can be used, whenever the panel opens or the user signs in
+  // or out. Without a server (or on any error) the offline helper is used.
+  useEffect(() => {
+    if (!open || status !== 'ready') return;
+    let cancelled = false;
+    api<AiStatus>('GET', '/api/assistant/status')
+      .then((result) => {
+        if (!cancelled) setAiStatus(result);
+      })
+      .catch(() => {
+        if (!cancelled) setAiStatus({ ai: false, reason: 'AI mode is not available.' });
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [open, status, user]);
+
   // Keep the newest message in view.
   useEffect(() => {
     endRef.current?.scrollIntoView({ block: 'end' });
   }, [messages]);
 
-  /** Ask a question and add both it and the answer to the conversation. */
-  function ask(question: string) {
-    const trimmed = question.trim();
-    if (trimmed === '' || trimmed.length > MAX_QUESTION_LENGTH) return;
-    const answer = answerOffline(trimmed, context);
-    const userId = nextId.current++;
-    const answerId = nextId.current++;
+  /** Add an answer from the offline helper, with an optional note saying why. */
+  function answerHere(question: string, notice?: string) {
+    const answer = answerOffline(question, context);
     setMessages((current) => [
       ...current,
-      { id: userId, role: 'user', text: trimmed },
-      { id: answerId, role: 'assistant', text: answer.text },
+      { id: nextId.current++, role: 'assistant', text: answer.text, source: 'offline', notice },
     ]);
+  }
+
+  /** Ask a question and add both it and the answer to the conversation. */
+  async function ask(question: string) {
+    const trimmed = question.trim();
+    if (trimmed === '' || trimmed.length > MAX_QUESTION_LENGTH || busy) return;
+    const earlier = messages;
+    setMessages((current) => [...current, { id: nextId.current++, role: 'user', text: trimmed }]);
     setDraft('');
+
+    if (!aiStatus?.ai) {
+      answerHere(trimmed);
+      return;
+    }
+    setBusy(true);
+    try {
+      const result = await api<{ answer?: string; declined?: boolean; fallback?: string }>(
+        'POST',
+        '/api/assistant',
+        {
+          question: trimmed,
+          history: historyFor(earlier),
+          context: describeWork(context, {
+            pointP: state.pointP,
+            pointQ: state.pointQ,
+            k: state.k,
+          }),
+        },
+      );
+      if (result.answer) {
+        const text = result.answer;
+        setMessages((current) => [
+          ...current,
+          { id: nextId.current++, role: 'assistant', text, source: 'ai' },
+        ]);
+      } else {
+        answerHere(
+          trimmed,
+          `${result.fallback ?? 'AI mode did not answer.'} Answered by the offline helper.`,
+        );
+      }
+    } catch {
+      answerHere(trimmed, 'AI mode is not reachable right now. Answered by the offline helper.');
+    } finally {
+      setBusy(false);
+    }
   }
 
   function handleSubmit(event: FormEvent) {
     event.preventDefault();
-    ask(draft);
+    void ask(draft);
   }
 
   /** Enter sends; Shift+Enter starts a new line. */
   function handleKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
     if (event.key === 'Enter' && !event.shiftKey) {
       event.preventDefault();
-      ask(draft);
+      void ask(draft);
     }
   }
+
+  const aiOn = aiStatus?.ai === true;
 
   const tooLong = draft.length > MAX_QUESTION_LENGTH;
 
@@ -116,7 +201,9 @@ export function AssistantPanel() {
               Assistant
             </h2>
             <p className="text-xs text-muted" data-testid="assistant-mode">
-              Offline helper · built-in answers, no internet needed
+              {aiOn
+                ? 'AI mode · Claude Haiku 5.5, numbers from the engine'
+                : `Offline helper · ${aiStatus?.reason ?? 'built-in answers, no internet needed'}`}
             </p>
           </div>
         </div>
@@ -153,7 +240,7 @@ export function AssistantPanel() {
                 <button
                   key={suggestion}
                   type="button"
-                  onClick={() => ask(suggestion)}
+                  onClick={() => void ask(suggestion)}
                   className="cursor-pointer rounded-full border border-line bg-sunken px-3 py-1.5 text-note text-ink-soft transition-colors hover:border-primary/40 hover:bg-primary-soft hover:text-primary"
                 >
                   {suggestion}
@@ -179,14 +266,33 @@ export function AssistantPanel() {
               <span className="sr-only">
                 {message.role === 'user' ? 'You asked: ' : 'Answer: '}
               </span>
+              {message.notice && (
+                <p
+                  className="mb-1.5 flex items-start gap-1 text-xs text-warning"
+                  data-testid="assistant-notice"
+                >
+                  <Icon name="info" size={13} className="mt-px" />
+                  {message.notice}
+                </p>
+              )}
               {message.role === 'user' ? (
                 <p className="break-words whitespace-pre-wrap">{message.text}</p>
               ) : (
                 <Markdown text={message.text} />
               )}
+              {message.source === 'ai' && (
+                <p className="mt-1.5 text-xs text-muted">
+                  AI answer: the numbers come from the engine, but the wording can be imperfect.
+                </p>
+              )}
             </div>
           </div>
         ))}
+        {busy && (
+          <p className="text-note text-muted" role="status" data-testid="assistant-busy">
+            Thinking…
+          </p>
+        )}
         <div ref={endRef} />
       </div>
 
@@ -214,7 +320,7 @@ export function AssistantPanel() {
             type="submit"
             variant="primary"
             icon="send"
-            disabled={draft.trim() === '' || tooLong}
+            disabled={draft.trim() === '' || tooLong || busy}
             aria-label="Send"
             className="w-10 px-0"
           />
