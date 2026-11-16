@@ -29,7 +29,16 @@ export default defineConfig({
     // Build first so the tests always run against the current code.
     command: 'npm run build && npm run serve',
     url: `http://127.0.0.1:${PORT}/api/health`,
-    env: { PORT: String(PORT) },
+    // A fresh in-memory database for every run, its own secret, and limits raised so the
+    // many test accounts (all from 127.0.0.1) are not mistaken for an attack.
+    env: {
+      PORT: String(PORT),
+      DATABASE_URL: ':memory:',
+      SESSION_SECRET: 'browser-tests-secret-browser-tests-secret',
+      SIGNUPS_PER_HOUR: '10000',
+      SIGNINS_PER_IP: '10000',
+      ANTHROPIC_API_KEY: '',
+    },
     // Never reuse a server that is already running: it could be serving an older build.
     reuseExistingServer: false,
     timeout: 120_000,

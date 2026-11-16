@@ -1,12 +1,14 @@
 /**
- * Entry point: loads the settings, starts the web server, prints the address and, when
- * started with `npm start`, opens it in the default browser.
+ * Entry point: loads the settings, opens the database, starts the web server, prints the
+ * address and, when started with `npm start`, opens it in the default browser.
  * If the usual port is taken, it tries the next few ports instead of giving up.
  */
 import { spawn } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { createServer } from 'node:net';
 import { buildApp, DEFAULT_CLIENT_DIR } from './app.ts';
+import { loadConfig, type ServerConfig } from './config.ts';
+import { databaseAddress, openDatabase, type Database } from './db/client.ts';
 import { loadEnvFile, optionalEnv } from './env.ts';
 
 loadEnvFile();
@@ -115,6 +117,27 @@ if (!existsSync(DEFAULT_CLIENT_DIR)) {
   );
 }
 
+let config: ServerConfig;
+try {
+  config = loadConfig();
+} catch (error) {
+  console.error(error instanceof Error ? error.message : error);
+  process.exit(1);
+}
+
+let db: Database;
+try {
+  ({ db } = await openDatabase(
+    databaseAddress(optionalEnv('DATABASE_URL')),
+    optionalEnv('DATABASE_AUTH_TOKEN'),
+  ));
+} catch (error) {
+  console.error('The database could not be opened.');
+  console.error(error instanceof Error ? error.message : error);
+  console.error('Run "npm run setup" to create it, then try again.');
+  process.exit(1);
+}
+
 const fixedPort = requestedPort();
 const candidates =
   fixedPort !== null
@@ -122,7 +145,7 @@ const candidates =
     : Array.from({ length: EXTRA_PORTS + 1 }, (_, index) => DEFAULT_PORT + index);
 const shouldOpen = process.env.OPEN_BROWSER === '1';
 
-const app = await buildApp({ logger: false });
+const app = await buildApp({ config, db, logger: false });
 let started: number | null = null;
 
 for (const port of candidates) {
@@ -161,5 +184,8 @@ if (started === null) {
 
 const url = `http://localhost:${started}`;
 console.info(`\nOnCurve is running at ${url}`);
+if (!config.anthropicApiKey) {
+  console.info('The assistant uses its offline helper (no ANTHROPIC_API_KEY in .env).');
+}
 console.info('Keep this window open while you use the app. Press Ctrl+C to stop.\n');
 if (shouldOpen) openBrowser(url);

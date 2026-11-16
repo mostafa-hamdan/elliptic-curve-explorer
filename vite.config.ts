@@ -23,6 +23,9 @@ export default defineConfig({
     outDir: fromRoot('./dist/client'),
     emptyOutDir: true,
     target: 'es2022',
+    // Never inline files as data: URLs, so the strict Content-Security-Policy (fonts and
+    // images only from this site) holds for every file.
+    assetsInlineLimit: 0,
   },
   worker: { format: 'es' },
   server: {

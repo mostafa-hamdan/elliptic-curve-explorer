@@ -1,20 +1,35 @@
 /**
  * Builds the web server (Fastify) without starting it.
  * Keeping "build" separate from "listen" lets the tests call routes directly, with no
- * network port involved. The server answers `/api/*` routes and also hands out the built
- * website from `dist/client`, so one command runs the whole app.
+ * network port involved. The server answers the `/api/*` routes, adds the security headers
+ * to every response, and hands out the built website from `dist/client`, so one command
+ * runs the whole app.
  */
 import { existsSync } from 'node:fs';
 import { extname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import fastifyCookie from '@fastify/cookie';
+import fastifyHelmet from '@fastify/helmet';
 import fastifyStatic from '@fastify/static';
-import Fastify, { type FastifyInstance } from 'fastify';
+import Fastify, { type FastifyError, type FastifyInstance } from 'fastify';
+import { csrfIsValid, loadAuth } from './auth/sessions.ts';
+import type { ServerConfig } from './config.ts';
+import type { Database } from './db/client.ts';
+import { accountRoutes } from './routes/account.ts';
+import { assistantRoutes } from './routes/assistant.ts';
+import { authRoutes } from './routes/auth.ts';
+import { dataRoutes } from './routes/data.ts';
+import './routes/shared.ts';
 
 /** Folder that `npm run build` fills with the website. Works with spaces in the path. */
 export const DEFAULT_CLIENT_DIR = fileURLToPath(new URL('../dist/client', import.meta.url));
 
 /** Options for {@link buildApp}. */
 export interface BuildAppOptions {
+  /** The server settings (secret, hosted or local). */
+  config: ServerConfig;
+  /** The open database. */
+  db: Database;
   /** Folder holding the built website. Defaults to `dist/client`. */
   clientDir?: string;
   /** Print one log line per request. Off by default so tests stay quiet. */
@@ -32,23 +47,102 @@ const healthResponseSchema = {
   additionalProperties: false,
 } as const;
 
+/** Methods that only read; every other method must carry the CSRF token. */
+const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
+
 /**
  * Create the configured server.
  *
- * @param options - where the built website lives and whether to log requests.
+ * @param options - settings, database, where the built website lives, logging.
  * @returns a Fastify instance that is ready to `listen()` or to `inject()` test requests.
  * @throws if a plugin fails to register (for example an unreadable website folder).
  */
-export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyInstance> {
-  const app = Fastify({ logger: options.logger ?? false });
+export async function buildApp(options: BuildAppOptions): Promise<FastifyInstance> {
+  const { config, db } = options;
+  const app = Fastify({
+    logger: options.logger ?? false,
+    // Behind a hosting platform's proxy the visitor's address is in X-Forwarded-For.
+    trustProxy: config.hosted,
+    // No request body the app expects is anywhere near this size.
+    bodyLimit: 64 * 1024,
+    // Refuse unknown fields instead of quietly dropping them (Fastify's default), so a
+    // request like { "admin": true } is rejected outright.
+    ajv: { customOptions: { removeAdditional: false } },
+  });
   const clientDir = options.clientDir ?? DEFAULT_CLIENT_DIR;
   const hasClient = existsSync(clientDir);
+
+  app.decorate('ctx', { db, config });
+  app.decorateRequest('auth', null);
+  await app.register(fastifyCookie);
+
+  // Security headers on every response. The Content-Security-Policy allows only this
+  // site's own files: no inline scripts, nothing from other sites. QR codes are data: images.
+  await app.register(fastifyHelmet, {
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'"],
+        styleSrc: ["'self'"],
+        imgSrc: ["'self'", 'data:'],
+        fontSrc: ["'self'"],
+        connectSrc: ["'self'"],
+        workerSrc: ["'self'"],
+        objectSrc: ["'none'"],
+        baseUri: ["'self'"],
+        formAction: ["'self'"],
+        frameAncestors: ["'none'"],
+        upgradeInsecureRequests: config.hosted ? [] : null,
+      },
+    },
+    frameguard: { action: 'deny' },
+    referrerPolicy: { policy: 'no-referrer' },
+    // HTTPS-only for a year, but only when hosted: a local demo runs on plain http.
+    strictTransportSecurity: config.hosted
+      ? { maxAge: 31_536_000, includeSubDomains: true }
+      : false,
+  });
+
+  // Every request that changes something must prove it comes from this site's own page.
+  app.addHook('onRequest', async (request, reply) => {
+    if (!request.url.startsWith('/api/') || SAFE_METHODS.has(request.method)) return;
+    if (!csrfIsValid(request)) {
+      return reply.code(403).send({
+        error:
+          'The page’s security token is missing or out of date. Reload the page and try again.',
+      });
+    }
+  });
+
+  // Find out who is signed in, once per API request.
+  app.addHook('preHandler', async (request) => {
+    if (request.url.startsWith('/api/')) request.auth = await loadAuth(db, config, request);
+  });
+
+  // Bad input gets a clear 400; anything unexpected is logged and answered without details.
+  app.setErrorHandler((error: FastifyError, request, reply) => {
+    if (error.validation) {
+      return reply.code(400).send({
+        error: 'Some of the information sent was not valid. Check the form and try again.',
+      });
+    }
+    if (error.statusCode && error.statusCode < 500) {
+      return reply.code(error.statusCode).send({ error: error.message });
+    }
+    request.log.error(error);
+    return reply.code(500).send({ error: 'Something went wrong on the server. Please try again.' });
+  });
 
   // A tiny route used by the start script and the tests to see that the server is up.
   app.get('/api/health', { schema: { response: { 200: healthResponseSchema } } }, async () => ({
     status: 'ok',
     app: 'oncurve',
   }));
+
+  await authRoutes(app);
+  await accountRoutes(app);
+  await dataRoutes(app);
+  await assistantRoutes(app);
 
   if (hasClient) {
     await app.register(fastifyStatic, { root: clientDir });

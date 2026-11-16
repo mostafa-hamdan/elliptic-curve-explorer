@@ -4,14 +4,14 @@
  */
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { FastifyInstance } from 'fastify';
-import { buildApp } from '../../server/app.ts';
+import { createTestApp } from './helpers.ts';
 
 describe('server basics', () => {
   let app: FastifyInstance;
 
   beforeAll(async () => {
-    // Point at a folder that does not exist so the test does not depend on a build.
-    app = await buildApp({ clientDir: 'folder-that-does-not-exist' });
+    // The test app points at a folder that does not exist, so no build is needed.
+    ({ app } = await createTestApp());
   });
 
   afterAll(async () => {
