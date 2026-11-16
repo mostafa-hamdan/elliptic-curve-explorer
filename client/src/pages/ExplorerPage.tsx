@@ -2,18 +2,16 @@
  * The main page: the curve setup on the left and, on the right, three tabs for the three
  * tasks of the project: find all points, add two points, multiply a point by a scalar.
  */
-import { useState } from 'react';
 import { Card } from '../components/ui/Card.tsx';
 import { TabPanel, Tabs, type TabItem } from '../components/ui/Tabs.tsx';
 import { AddTab } from '../features/add/AddTab.tsx';
 import { CurvePanel } from '../features/curve/CurvePanel.tsx';
+import { useExplorer, type ExplorerTab } from '../features/explorer/ExplorerContext.tsx';
 import { MultiplyTab } from '../features/multiply/MultiplyTab.tsx';
 import { PointsTab } from '../features/points/PointsTab.tsx';
 import { usePageTitle } from '../lib/usePageTitle.ts';
 
-type ExplorerTab = 'points' | 'add' | 'multiply';
-
-const TABS: ReadonlyArray<TabItem<ExplorerTab>> = [
+export const EXPLORER_TABS: ReadonlyArray<TabItem<ExplorerTab>> = [
   { id: 'points', label: 'All points', icon: 'grid' },
   { id: 'add', label: 'Add points', icon: 'plus' },
   { id: 'multiply', label: 'Multiply', icon: 'close' },
@@ -22,7 +20,8 @@ const TABS: ReadonlyArray<TabItem<ExplorerTab>> = [
 /** The Explorer page. Its inputs and results live in the shared Explorer state. */
 export function ExplorerPage() {
   usePageTitle('Explorer');
-  const [tab, setTab] = useState<ExplorerTab>('points');
+  const { state, setTab } = useExplorer();
+  const tab = state.tab;
 
   return (
     <div>
@@ -35,18 +34,20 @@ export function ExplorerPage() {
       </div>
 
       <div className="grid items-start gap-5 lg:grid-cols-[340px_minmax(0,1fr)]">
-        <div className="lg:sticky lg:top-[76px]">
+        <div className="lg:sticky lg:top-[4.75rem]">
           <CurvePanel />
         </div>
 
         <Card as="section" aria-label="Operations on the curve" className="min-w-0 p-5">
-          <Tabs
-            items={TABS}
-            active={tab}
-            onChange={setTab}
-            idPrefix="explorer"
-            label="Operations"
-          />
+          <div data-tour="tabs">
+            <Tabs
+              items={EXPLORER_TABS}
+              active={tab}
+              onChange={setTab}
+              idPrefix="explorer"
+              label="Operations"
+            />
+          </div>
           <div className="mt-5">
             <TabPanel idPrefix="explorer" id="points" active={tab === 'points'}>
               <PointsTab />

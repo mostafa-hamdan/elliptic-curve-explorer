@@ -52,7 +52,7 @@ export function Pager({ page, pageCount, onChange, label }: PagerProps) {
     <nav aria-label={`Pages of ${label}`} className="flex items-center gap-1.5">
       {renderButton(0)}
       {renderButton(1)}
-      <span className="px-2 text-[13px] text-ink-soft tabular-nums" aria-live="polite">
+      <span className="px-2 text-note text-ink-soft tabular-nums" aria-live="polite">
         Page{' '}
         <strong className="font-semibold text-ink">{(page + 1).toLocaleString('en-US')}</strong> of{' '}
         {pageCount.toLocaleString('en-US')}

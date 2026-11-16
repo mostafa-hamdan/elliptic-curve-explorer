@@ -7,7 +7,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { curveName, type Point } from '@shared/ecc/index.ts';
 import { count } from '../../lib/format.ts';
-import { useTheme } from '../theme/ThemeContext.tsx';
+import { useTheme } from '../preferences/PreferencesContext.tsx';
 import type { PointList } from './usePointListing.ts';
 
 /** Up to this p every point gets its own dot; above it the density view is used. */
@@ -231,7 +231,7 @@ export function PointsPlot({ list, highlights }: PointsPlotProps) {
           className="block"
         />
       </div>
-      <figcaption className="mt-1 text-[13px] leading-snug text-muted">
+      <figcaption className="mt-1 text-note leading-snug text-muted">
         {density ? (
           <>
             <strong className="font-semibold text-ink-soft">Density view.</strong> With p above{' '}

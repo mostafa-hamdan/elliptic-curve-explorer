@@ -92,6 +92,45 @@ const SCREENS: Array<{ name: string; open: (page: Page) => Promise<void> }> = [
     },
   },
   {
+    name: 'help',
+    open: async (page) => {
+      await page.goto('/help');
+      await expect(page.getByRole('heading', { level: 1, name: 'Help' })).toBeVisible();
+    },
+  },
+  {
+    name: 'assistant',
+    open: async (page) => {
+      await openExplorer(page);
+      await openTab(page, 'Add points');
+      await page.getByRole('button', { name: 'Calculate P + Q' }).click();
+      await page.getByRole('button', { name: 'Assistant' }).click();
+      await page
+        .getByTestId('assistant')
+        .getByRole('button', { name: 'Explain my last result' })
+        .click();
+      await expect(page.getByTestId('assistant-answer')).toBeVisible();
+    },
+  },
+  {
+    name: 'settings',
+    open: async (page) => {
+      await openExplorer(page);
+      await page.getByRole('button', { name: 'Display settings' }).click();
+      await expect(page.getByTestId('settings-dialog')).toBeVisible();
+    },
+  },
+  {
+    name: 'tour',
+    open: async (page) => {
+      await openExplorer(page);
+      await page.getByRole('button', { name: 'Display settings' }).click();
+      await page.getByRole('button', { name: 'Show the guided tour' }).click();
+      await page.getByTestId('tour-card').getByRole('button', { name: 'Next' }).click();
+      await expect(page.getByTestId('tour-card')).toContainText('Step 2 of');
+    },
+  },
+  {
     name: 'limitations',
     open: async (page) => {
       await page.goto('/limitations');
@@ -239,10 +278,11 @@ test.describe('every screen: accessibility, overflow and screenshots', () => {
           await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
           await expectNoOverflow(page);
           // Capture from the top, so the sticky top bar is drawn where a reader sees it.
-          await page.evaluate(() => window.scrollTo(0, 0));
+          // The tour is pinned to the window, so it is captured as the window shows it.
+          if (screen.name !== 'tour') await page.evaluate(() => window.scrollTo(0, 0));
           await page.screenshot({
             path: `${SHOTS}/${browserName}-${screen.name}-${theme}-${viewport.name}.png`,
-            fullPage: true,
+            fullPage: screen.name !== 'tour',
           });
         }
         // The accessibility rules do not depend on the window size; check once.

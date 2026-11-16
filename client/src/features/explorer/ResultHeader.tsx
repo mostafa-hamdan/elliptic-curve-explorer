@@ -36,14 +36,14 @@ export function ResultHeader({ expression, result, rule, detail, testId }: Resul
             <span data-testid={testId}>{text}</span>
           </p>
           {result === null && (
-            <p className="mt-0.5 text-[13px] text-ink-soft">
+            <p className="mt-0.5 text-note text-ink-soft">
               O is the point at infinity, the identity element of the group.
             </p>
           )}
         </div>
         <CopyButton text={text} label="Copy result" />
       </div>
-      {detail && <div className="mt-2 text-[13px] text-ink-soft">{detail}</div>}
+      {detail && <div className="mt-2 text-note text-ink-soft">{detail}</div>}
     </div>
   );
 }

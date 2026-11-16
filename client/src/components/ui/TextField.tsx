@@ -81,7 +81,7 @@ export function TextField({
 
   return (
     <div className={cx('min-w-0', className)}>
-      <label htmlFor={id} className="mb-1 block text-[13px] font-medium text-ink-soft">
+      <label htmlFor={id} className="mb-1 block text-note font-medium text-ink-soft">
         {label}
       </label>
       <textarea
@@ -100,7 +100,7 @@ export function TextField({
         aria-invalid={hasError}
         aria-describedby={hasMessage ? messageId : undefined}
         className={cx(
-          'block min-h-10 w-full resize-none overflow-hidden rounded-lg border bg-surface px-3 py-[9px] font-mono text-sm leading-5 break-all text-ink transition-colors',
+          'block min-h-10 w-full resize-none overflow-hidden rounded-lg border bg-surface px-3 py-[0.5625rem] font-mono text-sm leading-5 break-all text-ink transition-colors',
           'placeholder:text-muted/70 disabled:cursor-not-allowed disabled:bg-sunken disabled:text-muted',
           hasError
             ? 'border-danger focus-visible:outline-danger'
@@ -111,7 +111,7 @@ export function TextField({
         <p
           id={messageId}
           className={cx(
-            'mt-1 flex items-start gap-1 text-[13px] leading-snug',
+            'mt-1 flex items-start gap-1 text-note leading-snug',
             hasError ? 'text-danger' : note ? 'text-success' : 'text-muted',
           )}
         >

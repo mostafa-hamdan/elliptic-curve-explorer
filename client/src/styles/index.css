@@ -22,7 +22,7 @@
     min-height: 100vh;
     background: var(--oc-bg);
     color: var(--oc-ink);
-    font-size: 15px;
+    font-size: 0.9375rem;
     line-height: 1.55;
   }
 

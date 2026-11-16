@@ -27,7 +27,7 @@ export function ProgressBar({ value, label }: ProgressBarProps) {
           style={{ width: `${percent}%` }}
         />
       </div>
-      <span className="w-10 text-right font-mono text-[13px] text-ink-soft">{percent}%</span>
+      <span className="w-10 text-right font-mono text-note text-ink-soft">{percent}%</span>
     </div>
   );
 }

@@ -110,7 +110,7 @@ export function AddTab() {
       />
 
       <form onSubmit={handleSubmit} noValidate className="space-y-4">
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className="grid gap-4 md:grid-cols-2" data-tour="add-points">
           <PointInput
             which="P"
             idPrefix="add"
@@ -129,7 +129,7 @@ export function AddTab() {
           />
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2" data-tour="add-actions">
           <Button type="submit" variant="primary" icon="plus">
             Calculate P + Q
           </Button>

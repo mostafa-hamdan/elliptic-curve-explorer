@@ -7,7 +7,22 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test as base, type Page } from '@playwright/test';
 
-export const test = base.extend<{ consoleGuard: void }>({
+export const test = base.extend<{ consoleGuard: void; skipTour: void }>({
+  // The guided tour opens on a first visit. Tests start as returning visitors so it does
+  // not cover the page; the tour has its own tests, which turn this off.
+  skipTour: [
+    async ({ page }, use) => {
+      await page.addInitScript(() => {
+        try {
+          window.localStorage.setItem('oncurve.tourDone', '1');
+        } catch {
+          // Storage blocked: nothing to do.
+        }
+      });
+      await use();
+    },
+    { auto: true },
+  ],
   consoleGuard: [
     async ({ page }, use) => {
       const problems: string[] = [];

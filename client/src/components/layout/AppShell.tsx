@@ -1,38 +1,125 @@
 /**
- * The frame around every page: the top bar with the logo, the navigation and the theme
- * switch, the main content area, and the footer.
+ * The frame around every page: the top bar with the logo, the navigation and the quick
+ * controls, the main content area, the footer, and the app-wide pop-ups (settings,
+ * keyboard shortcuts, the guided tour). It also listens for the keyboard shortcuts.
  */
-import { NavLink, Outlet } from 'react-router';
+import { useEffect } from 'react';
+import { NavLink, Outlet, useLocation, useNavigate } from 'react-router';
 import { cx } from '../../lib/cx.ts';
-import { useTheme } from '../../features/theme/ThemeContext.tsx';
-import { Icon } from '../ui/Icon.tsx';
+import { AssistantPanel } from '../../features/assistant/AssistantPanel.tsx';
+import { useExplorer } from '../../features/explorer/ExplorerContext.tsx';
+import { usePreferences } from '../../features/preferences/PreferencesContext.tsx';
+import { SettingsDialog } from '../../features/preferences/SettingsDialog.tsx';
+import { ShortcutsDialog } from '../../features/preferences/ShortcutsDialog.tsx';
+import { isTypingTarget, shortcutFor } from '../../features/preferences/shortcuts.ts';
+import { useShell } from '../../features/shell/ShellContext.tsx';
+import { TourOverlay } from '../../features/tutorial/TourOverlay.tsx';
+import { useTutorial } from '../../features/tutorial/TutorialContext.tsx';
+import { Icon, type IconName } from '../ui/Icon.tsx';
 import { Logo } from './Logo.tsx';
 
 /** Pages listed in the top bar, in order. */
-const NAV_ITEMS = [
+export const NAV_ITEMS: ReadonlyArray<{ to: string; label: string }> = [
   { to: '/', label: 'Explorer' },
+  { to: '/help', label: 'Help' },
   { to: '/limitations', label: 'Limitations' },
-] as const;
+];
 
-/** Button in the top bar that switches between the light and dark themes. */
-function ThemeToggle() {
-  const { theme, toggleTheme } = useTheme();
-  const next = theme === 'dark' ? 'light' : 'dark';
+interface HeaderButtonProps {
+  icon: IconName;
+  label: string;
+  onClick: () => void;
+  /** Marks the button for the guided tour. */
+  tour?: string;
+  /** Show the label next to the icon on wide screens. */
+  showLabel?: boolean;
+}
+
+/** A square icon button in the top bar, with a tooltip and an accessible name. */
+function HeaderButton({ icon, label, onClick, tour, showLabel }: HeaderButtonProps) {
   return (
     <button
       type="button"
-      onClick={toggleTheme}
-      aria-label={`Switch to ${next} theme`}
-      title={`Switch to ${next} theme`}
-      className="inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg border border-line bg-surface text-ink-soft transition-colors hover:bg-sunken hover:text-ink"
+      onClick={onClick}
+      aria-label={label}
+      title={label}
+      data-tour={tour}
+      className={cx(
+        'inline-flex h-9 shrink-0 cursor-pointer items-center justify-center gap-2 rounded-lg border border-line bg-surface text-ink-soft transition-colors hover:bg-sunken hover:text-ink',
+        showLabel ? 'w-9 xl:w-auto xl:px-3' : 'w-9',
+      )}
     >
-      <Icon name={theme === 'dark' ? 'sun' : 'moon'} size={17} />
+      <Icon name={icon} size={17} />
+      {showLabel && <span className="hidden text-sm font-medium xl:inline">{label}</span>}
     </button>
   );
 }
 
+/**
+ * Handle the keyboard shortcuts for the whole app (see `shortcuts.ts` for the list).
+ * Shortcuts are off while a dialog or the tour is open.
+ */
+function useGlobalShortcuts(): void {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { setTab } = useExplorer();
+  const { toggleTheme } = usePreferences();
+  const { openPanel } = useShell();
+  const tutorial = useTutorial();
+
+  useEffect(() => {
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.defaultPrevented || tutorial.active) return;
+      if (document.querySelector('dialog[open]')) return;
+      const action = shortcutFor({
+        key: event.key,
+        altKey: event.altKey,
+        ctrlKey: event.ctrlKey,
+        metaKey: event.metaKey,
+        typing: isTypingTarget(document.activeElement),
+      });
+      if (action === null) return;
+      event.preventDefault();
+
+      const goExplorer = () => {
+        if (location.pathname !== '/') navigate('/');
+      };
+      switch (action) {
+        case 'tab-points':
+        case 'tab-add':
+        case 'tab-multiply':
+          goExplorer();
+          setTab(action === 'tab-points' ? 'points' : action === 'tab-add' ? 'add' : 'multiply');
+          break;
+        case 'focus-curve':
+          goExplorer();
+          // Wait a frame in case the Explorer page is still being drawn.
+          requestAnimationFrame(() => document.getElementById('curve-p')?.focus());
+          break;
+        case 'toggle-theme':
+          toggleTheme();
+          break;
+        case 'show-shortcuts':
+          openPanel('shortcuts');
+          break;
+        case 'open-assistant':
+          openPanel('assistant');
+          break;
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [location.pathname, navigate, setTab, toggleTheme, openPanel, tutorial.active]);
+}
+
 /** Page frame. The current page is rendered where `<Outlet />` sits. */
 export function AppShell() {
+  const { theme, toggleTheme } = usePreferences();
+  const { openPanel } = useShell();
+  useGlobalShortcuts();
+
+  const nextTheme = theme === 'dark' ? 'light' : 'dark';
+
   return (
     <div className="flex min-h-screen flex-col">
       {/* Lets keyboard users jump past the top bar straight to the page. */}
@@ -43,19 +130,29 @@ export function AppShell() {
         Skip to content
       </a>
 
-      <header className="sticky top-0 z-30 border-b border-line bg-surface/90 backdrop-blur">
-        <div className="mx-auto flex h-14 w-full max-w-[1480px] items-center gap-6 px-4 sm:px-6">
-          <NavLink to="/" className="flex items-center gap-2.5 rounded-lg" title="OnCurve home">
+      <header className="sticky top-0 z-30 border-b border-line bg-surface/90 backdrop-blur print:hidden">
+        <div className="mx-auto flex h-14 w-full max-w-[1480px] items-center gap-3 px-4 sm:gap-6 sm:px-6">
+          <NavLink
+            to="/"
+            className="flex shrink-0 items-center gap-2.5 rounded-lg"
+            title="OnCurve home"
+          >
             <Logo size={30} />
-            <span className="flex items-baseline gap-2">
-              <span className="text-[17px] font-semibold tracking-tight text-ink">OnCurve</span>
-              <span className="hidden text-[13px] text-muted md:inline">
+            <span className="hidden items-baseline gap-2 sm:flex">
+              <span className="text-[1.0625rem] font-semibold tracking-tight text-ink">
+                OnCurve
+              </span>
+              <span className="hidden text-note text-muted 2xl:inline">
                 Elliptic Curve Explorer
               </span>
             </span>
           </NavLink>
 
-          <nav aria-label="Main" className="flex items-center gap-1">
+          <nav
+            aria-label="Main"
+            data-tour="nav"
+            className="-mx-1 flex min-w-0 items-center gap-1 overflow-x-auto px-1 py-1"
+          >
             {NAV_ITEMS.map((item) => (
               <NavLink
                 key={item.to}
@@ -63,7 +160,7 @@ export function AppShell() {
                 end={item.to === '/'}
                 className={({ isActive }) =>
                   cx(
-                    'rounded-lg px-3 py-1.5 text-sm font-medium transition-colors',
+                    'shrink-0 rounded-lg px-3 py-1.5 text-sm font-medium whitespace-nowrap transition-colors',
                     isActive
                       ? 'bg-primary-soft text-primary'
                       : 'text-ink-soft hover:bg-sunken hover:text-ink',
@@ -75,8 +172,25 @@ export function AppShell() {
             ))}
           </nav>
 
-          <div className="ml-auto flex items-center gap-2">
-            <ThemeToggle />
+          <div className="ml-auto flex shrink-0 items-center gap-2">
+            <HeaderButton
+              icon="sparkle"
+              label="Assistant"
+              tour="assistant"
+              showLabel
+              onClick={() => openPanel('assistant')}
+            />
+            <HeaderButton
+              icon="sliders"
+              label="Display settings"
+              tour="settings"
+              onClick={() => openPanel('settings')}
+            />
+            <HeaderButton
+              icon={theme === 'dark' ? 'sun' : 'moon'}
+              label={`Switch to ${nextTheme} theme`}
+              onClick={toggleTheme}
+            />
           </div>
         </div>
       </header>
@@ -85,14 +199,28 @@ export function AppShell() {
         <Outlet />
       </main>
 
-      <footer className="border-t border-line">
-        <div className="mx-auto flex w-full max-w-[1480px] flex-wrap items-center justify-between gap-2 px-4 py-4 text-[13px] text-muted sm:px-6">
+      <footer className="border-t border-line print:hidden">
+        <div className="mx-auto flex w-full max-w-[1480px] flex-wrap items-center justify-between gap-2 px-4 py-4 text-note text-muted sm:px-6">
           <p>OnCurve is a learning tool. Do not use it to protect real secrets.</p>
-          <NavLink to="/limitations" className="font-medium text-primary hover:underline">
-            What this app cannot do
-          </NavLink>
+          <div className="flex flex-wrap gap-4">
+            <button
+              type="button"
+              onClick={() => openPanel('shortcuts')}
+              className="cursor-pointer font-medium text-primary hover:underline"
+            >
+              Keyboard shortcuts
+            </button>
+            <NavLink to="/limitations" className="font-medium text-primary hover:underline">
+              What this app cannot do
+            </NavLink>
+          </div>
         </div>
       </footer>
+
+      <AssistantPanel />
+      <SettingsDialog />
+      <ShortcutsDialog />
+      <TourOverlay />
     </div>
   );
 }

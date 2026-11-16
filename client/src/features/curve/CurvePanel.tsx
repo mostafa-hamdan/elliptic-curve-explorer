@@ -46,7 +46,7 @@ function CurveStatus({ check }: { check: CurveCheck }) {
         title={`${curveLabel(check.curve, check.bits)} is a valid curve`}
         data-testid="curve-status"
       >
-        {equation && <p className="font-mono text-[13px] text-ink">{equation}</p>}
+        {equation && <p className="font-mono text-note text-ink">{equation}</p>}
         <p className="mt-1">
           4a³ + 27b² ≡{' '}
           <span className="font-mono break-all">{shortNumber(check.singularity ?? 0n)}</span> (mod
@@ -83,13 +83,13 @@ function CurveStatus({ check }: { check: CurveCheck }) {
 
 /** The curve setup card shown on the left of the Explorer page. */
 export function CurvePanel() {
-  const { state, curveCheck, setCurveField, applyPreset, clearAll } = useExplorer();
+  const { state, curveCheck, setCurveField, applyPreset, clearAll, reset } = useExplorer();
   const textbook = CURVE_PRESETS.filter((preset) => preset.group === 'textbook');
   const real = CURVE_PRESETS.filter((preset) => preset.group === 'real');
   const activePreset = CURVE_PRESETS.find((preset) => preset.id === state.presetId);
 
   return (
-    <Card as="section" aria-labelledby="curve-heading" className="p-5">
+    <Card as="section" aria-labelledby="curve-heading" className="p-5" data-tour="curve">
       <CardHeader
         id="curve-heading"
         title="Curve"
@@ -101,7 +101,7 @@ export function CurvePanel() {
       />
 
       <div className="mt-4 space-y-4">
-        <div>
+        <div data-tour="presets">
           <SelectField
             id="curve-preset"
             label="Example curves"
@@ -128,7 +128,7 @@ export function CurvePanel() {
             </optgroup>
           </SelectField>
           {activePreset && (
-            <p className="mt-1 text-[13px] leading-snug text-muted" data-testid="preset-note">
+            <p className="mt-1 text-note leading-snug text-muted" data-testid="preset-note">
               {activePreset.note}
             </p>
           )}
@@ -172,8 +172,23 @@ export function CurvePanel() {
 
         <CurveStatus check={curveCheck} />
 
-        <div className="flex justify-end border-t border-line pt-4">
-          <Button variant="ghost" size="sm" icon="trash" onClick={clearAll}>
+        <div className="flex flex-wrap justify-end gap-2 border-t border-line pt-4">
+          <Button
+            variant="ghost"
+            size="sm"
+            icon="reset"
+            onClick={reset}
+            title="Go back to the example curve E23(1, 1) with its sample points"
+          >
+            Reset to example
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            icon="trash"
+            onClick={clearAll}
+            title="Empty every box and remove every result"
+          >
             Clear all
           </Button>
         </div>

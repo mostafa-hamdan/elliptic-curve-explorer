@@ -55,7 +55,7 @@ function Step({ number, title, children }: StepProps) {
 
 /** One line of working, in the number font. Long numbers wrap instead of overflowing. */
 function Line({ children }: { children: ReactNode }) {
-  return <p className="font-mono text-[13px] leading-relaxed break-all text-ink">{children}</p>;
+  return <p className="font-mono text-note leading-relaxed break-all text-ink">{children}</p>;
 }
 
 /** The final value of a line, emphasised. */
@@ -71,7 +71,7 @@ interface EuclidTableProps {
 function EuclidTable({ inverse }: EuclidTableProps) {
   const table = (
     <div className="relative overflow-x-auto rounded-lg border border-line">
-      <table className="w-full border-collapse font-mono text-[13px]">
+      <table className="w-full border-collapse font-mono text-note">
         <caption className="sr-only">
           Extended Euclidean algorithm for the inverse of {inverse.value.toString()} modulo{' '}
           {inverse.modulus.toString()}
@@ -107,7 +107,7 @@ function EuclidTable({ inverse }: EuclidTableProps) {
   if (inverse.steps.length <= LONG_TABLE_ROWS) return table;
   return (
     <details className="rounded-lg">
-      <summary className="cursor-pointer rounded-md py-1 text-[13px] font-medium text-primary">
+      <summary className="cursor-pointer rounded-md py-1 text-note font-medium text-primary">
         Show all {inverse.steps.length} division lines
       </summary>
       <div className="mt-2">{table}</div>

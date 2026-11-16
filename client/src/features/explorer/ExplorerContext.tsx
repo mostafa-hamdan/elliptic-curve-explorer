@@ -28,8 +28,13 @@ export interface MultiplyOutcome {
   trace: MultiplicationTrace;
 }
 
+/** The three tabs of the Explorer page. */
+export type ExplorerTab = 'points' | 'add' | 'multiply';
+
 /** Everything the Explorer page remembers. Inputs are kept as the text the user typed. */
 export interface ExplorerState {
+  /** The tab that is showing. Kept here so shortcuts and the tutorial can switch it. */
+  tab: ExplorerTab;
   p: string;
   a: string;
   b: string;
@@ -40,6 +45,8 @@ export interface ExplorerState {
   presetId: string;
   addResult: AddOutcome | null;
   multiplyResult: MultiplyOutcome | null;
+  /** Which of the two results was calculated most recently, for "explain my last result". */
+  lastResult: 'add' | 'multiply' | null;
 }
 
 type ExplorerAction =
@@ -48,6 +55,8 @@ type ExplorerAction =
   | { type: 'scalar'; value: string }
   | { type: 'preset'; id: string }
   | { type: 'clearAll' }
+  | { type: 'reset' }
+  | { type: 'tab'; tab: ExplorerTab }
   | { type: 'addResult'; outcome: AddOutcome | null }
   | { type: 'multiplyResult'; outcome: MultiplyOutcome | null };
 
@@ -55,6 +64,7 @@ const EMPTY_POINT: PointDraft = { x: '', y: '', infinity: false };
 
 /** The completely empty page, used by "Clear all". */
 const EMPTY_STATE: ExplorerState = {
+  tab: 'points',
   p: '',
   a: '',
   b: '',
@@ -64,6 +74,7 @@ const EMPTY_STATE: ExplorerState = {
   presetId: '',
   addResult: null,
   multiplyResult: null,
+  lastResult: null,
 };
 
 /**
@@ -72,10 +83,11 @@ const EMPTY_STATE: ExplorerState = {
  * @param id - preset identifier.
  * @returns the filled-in state, or the empty state for an unknown id.
  */
-function stateFromPreset(id: string): ExplorerState {
+function stateFromPreset(id: string, tab: ExplorerTab = 'points'): ExplorerState {
   const preset = findPreset(id);
-  if (!preset) return EMPTY_STATE;
+  if (!preset) return { ...EMPTY_STATE, tab };
   return {
+    tab,
     p: preset.p,
     a: preset.a,
     b: preset.b,
@@ -85,11 +97,15 @@ function stateFromPreset(id: string): ExplorerState {
     presetId: preset.id,
     addResult: null,
     multiplyResult: null,
+    lastResult: null,
   };
 }
 
-/** The app opens on the classroom curve E23(1, 1) so there is a working example at once. */
-const INITIAL_STATE: ExplorerState = stateFromPreset(CURVE_PRESETS[0]?.id ?? '');
+/** The classroom curve E23(1, 1): the app opens on it, and "Reset" returns to it. */
+const START_PRESET = CURVE_PRESETS[0]?.id ?? '';
+
+/** The app opens on E23(1, 1) so there is a working example at once. */
+const INITIAL_STATE: ExplorerState = stateFromPreset(START_PRESET);
 
 /** Apply one change to the state. Pure: the same inputs always give the same result. */
 function reducer(state: ExplorerState, action: ExplorerAction): ExplorerState {
@@ -103,6 +119,7 @@ function reducer(state: ExplorerState, action: ExplorerAction): ExplorerState {
         presetId: '',
         addResult: null,
         multiplyResult: null,
+        lastResult: null,
       };
     case 'point': {
       const key = action.which === 'P' ? 'pointP' : 'pointQ';
@@ -111,13 +128,30 @@ function reducer(state: ExplorerState, action: ExplorerAction): ExplorerState {
     case 'scalar':
       return { ...state, k: action.value };
     case 'preset':
-      return stateFromPreset(action.id);
+      // Choosing an example keeps the tab the user is working in.
+      return stateFromPreset(action.id, state.tab);
     case 'clearAll':
-      return EMPTY_STATE;
+      return { ...EMPTY_STATE, tab: state.tab };
+    case 'reset':
+      return stateFromPreset(START_PRESET, state.tab);
+    case 'tab':
+      return { ...state, tab: action.tab };
     case 'addResult':
-      return { ...state, addResult: action.outcome };
+      return {
+        ...state,
+        addResult: action.outcome,
+        lastResult: action.outcome ? 'add' : state.lastResult === 'add' ? null : state.lastResult,
+      };
     case 'multiplyResult':
-      return { ...state, multiplyResult: action.outcome };
+      return {
+        ...state,
+        multiplyResult: action.outcome,
+        lastResult: action.outcome
+          ? 'multiply'
+          : state.lastResult === 'multiply'
+            ? null
+            : state.lastResult,
+      };
   }
 }
 
@@ -132,7 +166,11 @@ export interface ExplorerContextValue {
   setPoint: (which: 'P' | 'Q', change: Partial<PointDraft>) => void;
   setScalar: (value: string) => void;
   applyPreset: (id: string) => void;
+  /** Empty every box and remove every result. */
   clearAll: () => void;
+  /** Go back to the starting example, E23(1, 1) with its sample points. */
+  reset: () => void;
+  setTab: (tab: ExplorerTab) => void;
   setAddResult: (outcome: AddOutcome | null) => void;
   setMultiplyResult: (outcome: MultiplyOutcome | null) => void;
 }
@@ -159,6 +197,8 @@ export function ExplorerProvider({ children }: { children: ReactNode }) {
       setScalar: (value: string) => dispatch({ type: 'scalar', value }),
       applyPreset: (id: string) => dispatch({ type: 'preset', id }),
       clearAll: () => dispatch({ type: 'clearAll' }),
+      reset: () => dispatch({ type: 'reset' }),
+      setTab: (tab: ExplorerTab) => dispatch({ type: 'tab', tab }),
       setAddResult: (outcome: AddOutcome | null) => dispatch({ type: 'addResult', outcome }),
       setMultiplyResult: (outcome: MultiplyOutcome | null) =>
         dispatch({ type: 'multiplyResult', outcome }),

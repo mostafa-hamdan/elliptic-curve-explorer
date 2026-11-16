@@ -39,7 +39,7 @@ export function SelectField({
     <div className={cx('min-w-0', className)}>
       <label
         htmlFor={id}
-        className={cx('mb-1 block text-[13px] font-medium text-ink-soft', hideLabel && 'sr-only')}
+        className={cx('mb-1 block text-note font-medium text-ink-soft', hideLabel && 'sr-only')}
       >
         {label}
       </label>

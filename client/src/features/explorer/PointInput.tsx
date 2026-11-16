@@ -32,7 +32,7 @@ export function PointBadge({ which, className }: PointBadgeProps) {
   return (
     <span
       className={cx(
-        'inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md font-mono text-[13px] font-semibold',
+        'inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md font-mono text-note font-semibold',
         ROLE_STYLES[which].badge,
         className,
       )}
@@ -68,7 +68,7 @@ function coordinateError(field: FieldCheck, showMissing: boolean): string | null
 function OnCurveLine({ check, draft }: { check: PointCheck; draft: PointDraft }) {
   if (draft.infinity) {
     return (
-      <p className="flex items-start gap-1.5 text-[13px] text-muted">
+      <p className="flex items-start gap-1.5 text-note text-muted">
         <Icon name="info" size={14} className="mt-0.5" />O is the identity element: adding it
         changes nothing.
       </p>
@@ -80,7 +80,7 @@ function OnCurveLine({ check, draft }: { check: PointCheck; draft: PointDraft })
   const right = shortNumber(check.sides.right);
   if (check.onCurve) {
     return (
-      <p className="flex items-start gap-1.5 text-[13px] text-success">
+      <p className="flex items-start gap-1.5 text-note text-success">
         <Icon name="checkCircle" size={14} className="mt-0.5" />
         <span className="min-w-0 break-words">
           On the curve: y² ≡ <span className="font-mono">{left}</span> and x³ + ax + b ≡{' '}
@@ -100,7 +100,7 @@ function OnCurveLine({ check, draft }: { check: PointCheck; draft: PointDraft })
     );
   }
   return (
-    <p className="flex items-start gap-1.5 text-[13px] text-danger">
+    <p className="flex items-start gap-1.5 text-note text-danger">
       <Icon name="errorCircle" size={14} className="mt-0.5" />
       <span className="min-w-0 break-words">
         Not on the curve: y² ≡ <span className="font-mono">{left}</span> but x³ + ax + b ≡{' '}
@@ -165,7 +165,7 @@ export function PointInput({
             Point {which}
           </span>
         </div>
-        <label className="flex cursor-pointer items-center gap-2 text-[13px] text-ink-soft">
+        <label className="flex cursor-pointer items-center gap-2 text-note text-ink-soft">
           <input
             type="checkbox"
             checked={draft.infinity}
@@ -221,7 +221,7 @@ export function PointInput({
             </SelectField>
           )}
           {list !== null && !pickable && (
-            <p className="text-[13px] text-muted">
+            <p className="text-note text-muted">
               This curve has too many points for a menu. Use the table in the All points tab to
               choose {which}.
             </p>
@@ -232,12 +232,12 @@ export function PointInput({
             </Button>
           )}
           {listing.state.status === 'running' && (
-            <p className="text-[13px] text-muted">
+            <p className="text-note text-muted">
               Finding the points… {Math.round(listing.state.progress * 100)}%
             </p>
           )}
           {listing.state.status === 'error' && (
-            <p className="text-[13px] text-danger">{listing.state.message}</p>
+            <p className="text-note text-danger">{listing.state.message}</p>
           )}
         </div>
       )}

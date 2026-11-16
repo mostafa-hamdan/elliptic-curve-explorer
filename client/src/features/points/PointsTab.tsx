@@ -39,7 +39,7 @@ function Stat({ label, children, detail, testId }: StatProps) {
       <p className="mt-0.5 font-mono text-lg font-semibold text-ink" data-testid={testId}>
         {children}
       </p>
-      {detail && <p className="text-[13px] leading-snug text-muted">{detail}</p>}
+      {detail && <p className="text-note leading-snug text-muted">{detail}</p>}
     </div>
   );
 }
@@ -109,13 +109,11 @@ function PointsTable({ list, selectedP, selectedQ, onSelect }: PointsTableProps)
               const isQ = isSelected(selectedQ, point);
               return (
                 <tr key={number} className="border-t border-line hover:bg-sunken/60">
-                  <td className="px-3 py-1.5 font-mono text-[13px] text-muted">
-                    {grouped(number)}
-                  </td>
+                  <td className="px-3 py-1.5 font-mono text-note text-muted">{grouped(number)}</td>
                   {point === null ? (
                     <td colSpan={2} className="px-3 py-1.5">
                       <span className="font-mono font-semibold text-ink">O</span>
-                      <span className="ml-2 text-[13px] text-muted">point at infinity</span>
+                      <span className="ml-2 text-note text-muted">point at infinity</span>
                     </td>
                   ) : (
                     <>
@@ -135,7 +133,7 @@ function PointsTable({ list, selectedP, selectedQ, onSelect }: PointsTableProps)
                             aria-pressed={active}
                             onClick={() => onSelect(which, point)}
                             className={cx(
-                              'inline-flex h-7 w-8 cursor-pointer items-center justify-center rounded-md border font-mono text-[13px] font-semibold transition-colors',
+                              'inline-flex h-7 w-8 cursor-pointer items-center justify-center rounded-md border font-mono text-note font-semibold transition-colors',
                               active &&
                                 which === 'P' &&
                                 'border-point-p bg-point-p-soft text-point-p',
@@ -159,7 +157,7 @@ function PointsTable({ list, selectedP, selectedQ, onSelect }: PointsTableProps)
       </div>
 
       <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
-        <p className="text-[13px] text-muted" data-testid="points-range">
+        <p className="text-note text-muted" data-testid="points-range">
           Rows {grouped(first + 1)}–{grouped(last)} of {grouped(totalRows)}
         </p>
         <div className="flex flex-wrap items-center gap-3">
@@ -214,23 +212,25 @@ export function PointsTab() {
   }
 
   const header = (
-    <CardHeader
-      title="All points on the curve"
-      description="Every (x, y) that satisfies the equation, plus the point at infinity O."
-      actions={
-        curve &&
-        listing.canList &&
-        (listing.state.status === 'running' ? (
-          <Button icon="stop" onClick={listing.cancel}>
-            Cancel
-          </Button>
-        ) : (
-          <Button variant="primary" icon="play" onClick={listing.start}>
-            {listing.state.status === 'done' ? 'Find again' : 'Find all points'}
-          </Button>
-        ))
-      }
-    />
+    <div data-tour="find-points">
+      <CardHeader
+        title="All points on the curve"
+        description="Every (x, y) that satisfies the equation, plus the point at infinity O."
+        actions={
+          curve &&
+          listing.canList &&
+          (listing.state.status === 'running' ? (
+            <Button icon="stop" onClick={listing.cancel}>
+              Cancel
+            </Button>
+          ) : (
+            <Button variant="primary" icon="play" onClick={listing.start}>
+              {listing.state.status === 'done' ? 'Find again' : 'Find all points'}
+            </Button>
+          ))
+        }
+      />
+    </div>
   );
 
   if (!curve) {
@@ -341,7 +341,7 @@ function PointsResult({ list, selectedP, selectedQ, highlights, onSelect }: Poin
         </Stat>
       </div>
 
-      <div className="flex flex-wrap items-center gap-x-5 gap-y-1 text-[13px] text-ink-soft">
+      <div className="flex flex-wrap items-center gap-x-5 gap-y-1 text-note text-ink-soft">
         <span className="text-muted">Selected for the other tabs:</span>
         <span className="inline-flex items-center gap-1.5" data-testid="selected-p">
           <PointBadge which="P" />

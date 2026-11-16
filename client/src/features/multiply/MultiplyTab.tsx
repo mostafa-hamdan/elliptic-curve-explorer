@@ -122,11 +122,11 @@ function MultiplyTable({ curve, trace }: MultiplyTableProps) {
             return (
               <Fragment key={row.index}>
                 <tr className={cx('border-t border-line align-top', open && 'bg-primary-soft/40')}>
-                  <td className="px-3 py-2 font-mono text-[13px] text-muted">{row.index + 1}</td>
+                  <td className="px-3 py-2 font-mono text-note text-muted">{row.index + 1}</td>
                   <td className="px-3 py-2">
                     <span
                       className={cx(
-                        'inline-flex h-6 w-6 items-center justify-center rounded-md font-mono text-[13px] font-semibold',
+                        'inline-flex h-6 w-6 items-center justify-center rounded-md font-mono text-note font-semibold',
                         row.bit === 1 ? 'bg-primary-soft text-primary' : 'bg-sunken text-ink-soft',
                       )}
                     >
@@ -134,10 +134,10 @@ function MultiplyTable({ curve, trace }: MultiplyTableProps) {
                     </span>
                   </td>
                   <td className="px-3 py-2 text-ink-soft">{OPERATION_TEXT[row.operation]}</td>
-                  <td className="px-3 py-2 font-mono text-[13px] break-all text-ink">
+                  <td className="px-3 py-2 font-mono text-note break-all text-ink">
                     {pointText(row.result, true)}
                   </td>
-                  <td className="px-3 py-2 font-mono text-[13px] break-all text-ink-soft">
+                  <td className="px-3 py-2 font-mono text-note break-all text-ink-soft">
                     {shortNumber(row.multiple)}P
                   </td>
                   <td className="px-3 py-2 text-right">
@@ -225,10 +225,7 @@ function MultiplyResult({ curve, trace }: MultiplyResultProps) {
               Write {trace.negated ? '|k|' : 'k'} in binary and read the bits from the left. The
               first bit sets R = P. Every later bit doubles R; a 1 bit then also adds P.
             </p>
-            <p
-              className="mt-2 font-mono text-[13px] break-all text-ink"
-              data-testid="multiply-bits"
-            >
+            <p className="mt-2 font-mono text-note break-all text-ink" data-testid="multiply-bits">
               {trace.magnitude.toString().length <= 40 && <>{trace.magnitude.toString()} = </>}
               {trace.bits}
               <sub>2</sub>
@@ -301,7 +298,7 @@ export function MultiplyTab() {
       />
 
       <form onSubmit={handleSubmit} noValidate className="space-y-4">
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className="grid gap-4 md:grid-cols-2" data-tour="multiply-k">
           <PointInput
             which="P"
             idPrefix="mul"
@@ -312,7 +309,7 @@ export function MultiplyTab() {
           />
           <div className="min-w-0 rounded-xl border border-line bg-surface p-4">
             <div className="flex items-center gap-2">
-              <span className="inline-flex h-6 w-6 items-center justify-center rounded-md bg-sunken font-mono text-[13px] font-semibold text-ink-soft">
+              <span className="inline-flex h-6 w-6 items-center justify-center rounded-md bg-sunken font-mono text-note font-semibold text-ink-soft">
                 k
               </span>
               <span className="text-sm font-semibold text-ink" aria-hidden="true">
