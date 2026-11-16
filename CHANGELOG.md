@@ -26,6 +26,8 @@ All changes a user can see are listed here, newest first.
 - Counts of one in summaries now read "1 addition", not "1 additions".
 - Dialogs no longer submit a form around them; long working lines break between words.
 
+### Added earlier (the three tasks)
+
 - Curve setup for Ep(a, b) with live validation: prime check, reduction of a and b mod p,
   and rejection of singular curves, each with a clear message.
 - Find all points: paged table including the point at infinity, total count, Hasse bound
