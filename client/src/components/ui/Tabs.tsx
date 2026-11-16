@@ -86,13 +86,14 @@ export function Tabs<Id extends string>({
             tabIndex={selected ? 0 : -1}
             onClick={() => onChange(item.id)}
             className={cx(
-              'inline-flex h-9 flex-1 cursor-pointer items-center justify-center gap-2 rounded-lg px-4 text-sm font-medium whitespace-nowrap transition-colors',
+              'inline-flex h-9 flex-1 cursor-pointer items-center justify-center gap-2 rounded-lg px-3 text-sm font-medium whitespace-nowrap transition-colors sm:px-4',
               selected
                 ? 'bg-surface text-primary shadow-card'
                 : 'text-ink-soft hover:bg-surface/60 hover:text-ink',
             )}
           >
-            {item.icon && <Icon name={item.icon} size={16} />}
+            {/* Icons are left out on narrow screens so all tabs fit side by side. */}
+            {item.icon && <Icon name={item.icon} size={16} className="hidden sm:block" />}
             {item.label}
           </button>
         );

@@ -199,7 +199,7 @@ function TwoFactorSection() {
             />
             <p className="text-note text-muted">
               Cannot scan? Type this key into the app:{' '}
-              <code className="font-mono break-all text-ink" data-testid="totp-secret">
+              <code className="font-mono wrap-anywhere text-ink" data-testid="totp-secret">
                 {setup.secret}
               </code>
             </p>

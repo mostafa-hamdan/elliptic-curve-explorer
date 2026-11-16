@@ -190,7 +190,7 @@ export function MultiplesAnimation({ curve, point }: MultiplesAnimationProps) {
               Multiple {grouped(shown)}
             </p>
             <p
-              className="mt-1 font-mono text-lg font-semibold break-all text-ink"
+              className="mt-1 font-mono text-lg font-semibold wrap-anywhere text-ink"
               data-testid="multiples-current"
             >
               {shown}P = {pointText(current, true)}
@@ -230,7 +230,7 @@ export function MultiplesAnimation({ curve, point }: MultiplesAnimationProps) {
               <li
                 key={index}
                 className={cx(
-                  'rounded px-2 py-0.5 break-all',
+                  'rounded px-2 py-0.5 wrap-anywhere',
                   index === shown - 1 ? 'bg-primary-soft text-ink' : 'text-ink-soft',
                 )}
               >

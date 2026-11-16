@@ -50,8 +50,8 @@ function CurveStatus({ check }: { check: CurveCheck }) {
         {equation && <p className="font-mono text-note text-ink">{equation}</p>}
         <p className="mt-1">
           4a³ + 27b² ≡{' '}
-          <span className="font-mono break-all">{shortNumber(check.singularity ?? 0n)}</span> (mod
-          p), which is not 0, so the curve is non-singular.
+          <span className="font-mono wrap-anywhere">{shortNumber(check.singularity ?? 0n)}</span>{' '}
+          (mod p), which is not 0, so the curve is non-singular.
         </p>
       </Callout>
     );

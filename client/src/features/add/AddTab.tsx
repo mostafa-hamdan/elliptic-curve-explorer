@@ -198,7 +198,7 @@ export function AddTab() {
             rule={RULE_NAMES[result.trace.kind]}
             testId="add-result"
             detail={
-              <span className="font-mono break-all">
+              <span className="font-mono wrap-anywhere">
                 P = {pointText(result.trace.p)}, Q = {pointText(result.trace.q)}
               </span>
             }

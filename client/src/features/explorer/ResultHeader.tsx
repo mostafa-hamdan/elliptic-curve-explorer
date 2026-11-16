@@ -31,7 +31,7 @@ export function ResultHeader({ expression, result, rule, detail, testId }: Resul
           <p className="text-xs font-medium tracking-wide text-point-r uppercase">
             Result{rule ? ` · ${rule}` : ''}
           </p>
-          <p className="mt-1 font-mono text-xl leading-snug font-semibold break-all text-ink">
+          <p className="mt-1 font-mono text-xl leading-snug font-semibold wrap-anywhere text-ink">
             <span className="text-ink-soft">{expression} = </span>
             <span data-testid={testId}>{text}</span>
           </p>

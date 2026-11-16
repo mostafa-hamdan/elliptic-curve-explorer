@@ -7,6 +7,7 @@ import { useNavigate } from 'react-router';
 import { Button } from '../../components/ui/Button.tsx';
 import { Callout } from '../../components/ui/Callout.tsx';
 import { Card, CardHeader } from '../../components/ui/Card.tsx';
+import { tryParseInteger } from '@shared/ecc/index.ts';
 import { api, errorMessage } from '../../lib/api.ts';
 import { cx } from '../../lib/cx.ts';
 import { count, shortNumber } from '../../lib/format.ts';
@@ -39,20 +40,36 @@ function when(time: number): string {
   });
 }
 
-/** Shorten a value that may be a 256-bit number written out in full. */
+/**
+ * Shorten a stored number for a list: long numbers keep their first and last digits.
+ * Hexadecimal is shown in decimal, like everywhere else in the app.
+ */
 function brief(value: string | boolean | undefined): string {
   if (typeof value !== 'string') return '';
-  return /^\d+$/.test(value)
-    ? shortNumber(BigInt(value), 6)
-    : value.length > 20
-      ? `${value.slice(0, 10)}…`
-      : value;
+  const parsed = tryParseInteger(value, 'value');
+  return parsed.ok ? shortNumber(parsed.value, 6) : value.slice(0, 20);
+}
+
+/**
+ * Name a stored curve: "E23(1, 1)" for small ones, "256-bit curve (a = 0, b = 7)" when p is
+ * too long to read in a list.
+ */
+function curveLabel(
+  p: string | boolean | undefined,
+  a: string | boolean | undefined,
+  b: string | boolean | undefined,
+): string {
+  const parsed = typeof p === 'string' ? tryParseInteger(p, 'p') : null;
+  if (parsed?.ok && parsed.value.toString().length > 12) {
+    return `${parsed.value.toString(2).length}-bit curve (a = ${brief(a)}, b = ${brief(b)})`;
+  }
+  return `E${brief(p)}(${brief(a)}, ${brief(b)})`;
 }
 
 /** One line describing the inputs of a history entry. */
 function describeInput(item: HistoryItem): string {
   const { input } = item;
-  const curve = `E${brief(input.p)}(${brief(input.a)}, ${brief(input.b)})`;
+  const curve = curveLabel(input.p, input.a, input.b);
   const P = input.pInfinity ? 'O' : `(${brief(input.px)}, ${brief(input.py)})`;
   const Q = input.qInfinity ? 'O' : `(${brief(input.qx)}, ${brief(input.qy)})`;
   if (item.operation === 'add') return `${curve}: ${P} + ${Q}`;
@@ -153,8 +170,8 @@ export function MyWork() {
                 <p className="text-sm font-medium break-words text-ink" title={item.name}>
                   {item.name}
                 </p>
-                <p className="font-mono text-note break-all text-muted">
-                  E{brief(item.data.p)}({brief(item.data.a)}, {brief(item.data.b)})
+                <p className="font-mono text-note wrap-anywhere text-muted">
+                  {curveLabel(item.data.p, item.data.a, item.data.b)}
                   {item.data.x !== undefined && ` · (${brief(item.data.x)}, ${brief(item.data.y)})`}
                 </p>
               </div>
@@ -226,12 +243,15 @@ export function MyWork() {
                   {OPERATION_LABELS[item.operation]} · {when(item.createdAt)}
                 </p>
                 <p
-                  className="font-mono text-note break-all text-ink-soft"
+                  className="font-mono text-note wrap-anywhere text-ink-soft"
                   title={describeInput(item)}
                 >
                   {describeInput(item)}
                 </p>
-                <p className="font-mono text-sm font-medium break-all text-ink" title={item.result}>
+                <p
+                  className="font-mono text-sm font-medium wrap-anywhere text-ink"
+                  title={item.result}
+                >
                   = {item.result}
                 </p>
               </div>

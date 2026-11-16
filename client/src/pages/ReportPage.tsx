@@ -53,7 +53,7 @@ function PrintableTable({ trace }: { trace: MultiplicationTrace }) {
                   ? 'R ← 2R'
                   : 'R ← 2R + P'}
             </td>
-            <td className="py-1 pr-3 break-all">{pointText(row.result)}</td>
+            <td className="py-1 pr-3 wrap-anywhere">{pointText(row.result)}</td>
             <td className="py-1">
               {row.multiple.toString().length > 24 ? '…' : row.multiple.toString()}P
             </td>
@@ -110,11 +110,11 @@ export function ReportPage() {
           </h2>
           <dl className="mt-2 grid gap-x-6 gap-y-1 font-mono text-sm sm:grid-cols-[auto_1fr]">
             <dt className="text-muted">p</dt>
-            <dd className="break-all text-ink">{curve.p.toString()}</dd>
+            <dd className="wrap-anywhere text-ink">{curve.p.toString()}</dd>
             <dt className="text-muted">a</dt>
-            <dd className="break-all text-ink">{curve.a.toString()}</dd>
+            <dd className="wrap-anywhere text-ink">{curve.a.toString()}</dd>
             <dt className="text-muted">b</dt>
-            <dd className="break-all text-ink">{curve.b.toString()}</dd>
+            <dd className="wrap-anywhere text-ink">{curve.b.toString()}</dd>
           </dl>
           {equationText(curve) && (
             <p className="mt-2 font-mono text-sm text-ink-soft">{equationText(curve)}</p>
@@ -193,7 +193,7 @@ export function ReportPage() {
           aria-labelledby="report-multiply"
           className="p-5 break-before-page print:shadow-none"
         >
-          <h2 id="report-multiply" className="text-lg font-semibold break-all text-ink">
+          <h2 id="report-multiply" className="text-lg font-semibold wrap-anywhere text-ink">
             Multiplication: {plain(multiply.trace.k)} · {pointText(multiply.trace.p)} ={' '}
             <span data-testid="report-multiply-result">{pointText(multiply.trace.result)}</span>
           </h2>

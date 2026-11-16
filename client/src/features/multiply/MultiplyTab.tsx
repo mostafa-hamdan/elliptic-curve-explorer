@@ -51,7 +51,7 @@ function RowDetail({ curve, trace, row }: RowDetailProps) {
     return (
       <p className="text-sm text-ink-soft">
         The leading bit of k is always 1, so the running result simply starts as R = P ={' '}
-        <span className="font-mono break-all text-ink">{pointText(trace.base)}</span>.
+        <span className="font-mono wrap-anywhere text-ink">{pointText(trace.base)}</span>.
       </p>
     );
   }
@@ -139,10 +139,10 @@ function MultiplyTable({ curve, trace }: MultiplyTableProps) {
                     </span>
                   </td>
                   <td className="px-3 py-2 text-ink-soft">{OPERATION_TEXT[row.operation]}</td>
-                  <td className="px-3 py-2 font-mono text-note break-all text-ink">
+                  <td className="px-3 py-2 font-mono text-note wrap-anywhere text-ink">
                     {pointText(row.result, true)}
                   </td>
-                  <td className="px-3 py-2 font-mono text-note break-all text-ink-soft">
+                  <td className="px-3 py-2 font-mono text-note wrap-anywhere text-ink-soft">
                     {shortNumber(row.multiple)}P
                   </td>
                   <td className="px-3 py-2 text-right">
@@ -201,7 +201,7 @@ function MultiplyResult({ curve, trace }: MultiplyResultProps) {
         rule="Double-and-add"
         testId="multiply-result"
         detail={
-          <span className="font-mono break-all">
+          <span className="font-mono wrap-anywhere">
             k = {kText}, P = {pointText(trace.p)}
           </span>
         }
@@ -228,9 +228,11 @@ function MultiplyResult({ curve, trace }: MultiplyResultProps) {
             {trace.negated && (
               <p className="mb-2" data-testid="multiply-negated">
                 k is negative, and (−k)P = k(−P). So the table uses |k| ={' '}
-                <span className="font-mono break-all text-ink">{trace.magnitude.toString()}</span>{' '}
+                <span className="font-mono wrap-anywhere text-ink">
+                  {trace.magnitude.toString()}
+                </span>{' '}
                 and the inverse point −P ={' '}
-                <span className="font-mono break-all text-ink">{pointText(trace.base)}</span> in
+                <span className="font-mono wrap-anywhere text-ink">{pointText(trace.base)}</span> in
                 place of P.
               </p>
             )}
@@ -238,7 +240,10 @@ function MultiplyResult({ curve, trace }: MultiplyResultProps) {
               Write {trace.negated ? '|k|' : 'k'} in binary and read the bits from the left. The
               first bit sets R = P. Every later bit doubles R; a 1 bit then also adds P.
             </p>
-            <p className="mt-2 font-mono text-note break-all text-ink" data-testid="multiply-bits">
+            <p
+              className="mt-2 font-mono text-note wrap-anywhere text-ink"
+              data-testid="multiply-bits"
+            >
               {trace.magnitude.toString().length <= 40 && <>{trace.magnitude.toString()} = </>}
               {trace.bits}
               <sub>2</sub>

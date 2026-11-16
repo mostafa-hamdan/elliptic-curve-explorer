@@ -6,6 +6,26 @@ All changes a user can see are listed here, newest first.
 
 ### Added
 
+- Accounts (optional): sign-up with a password strength meter, sign-in, two-factor
+  authentication with an authenticator app, ten recovery codes for a lost password, a
+  Security center (password, 2FA, recovery codes, sessions, activity, delete account),
+  saved curves and points, and a history of calculations with one-click reload.
+- Assistant: offline helper (built-in answers, inverse and prime checks, "explain my last
+  result" from the engine's steps) and an optional AI mode backed by the same engine.
+- Practice mode that checks hand-worked steps and points to the first mistake.
+- Learn page with the real-number picture next to the same addition mod p.
+- Interactive plot (hover, click to choose P or Q, zoom, drag) and a multiples animation.
+- Export: CSV of points, steps and tables; the plot as PNG; a printable report.
+- Guided tour, Help and Security pages, display settings (theme, text size), keyboard
+  shortcuts, Reset to example.
+- `npm run setup`, `npm start` (opens the browser, finds a free port), and start files for
+  Windows and macOS.
+
+### Fixed
+
+- Counts of one in summaries now read "1 addition", not "1 additions".
+- Dialogs no longer submit a form around them; long working lines break between words.
+
 - Curve setup for Ep(a, b) with live validation: prime check, reduction of a and b mod p,
   and rejection of singular curves, each with a clear message.
 - Find all points: paged table including the point at infinity, total count, Hasse bound

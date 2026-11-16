@@ -16,6 +16,8 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   size?: 'sm' | 'md';
   /** Optional icon shown before the label. */
   icon?: IconName;
+  /** Let a long label wrap onto several lines instead of widening the button. */
+  wrap?: boolean;
   children?: ReactNode;
 }
 
@@ -39,6 +41,7 @@ export function Button({
   variant = 'secondary',
   size = 'md',
   icon,
+  wrap = false,
   className,
   children,
   type = 'button',
@@ -48,7 +51,8 @@ export function Button({
     <button
       type={type}
       className={cx(
-        'inline-flex shrink-0 cursor-pointer items-center justify-center font-medium whitespace-nowrap transition-colors select-none',
+        'inline-flex cursor-pointer items-center justify-center font-medium transition-colors select-none',
+        wrap ? 'h-auto min-h-8 py-1 text-left whitespace-normal' : 'shrink-0 whitespace-nowrap',
         'disabled:cursor-not-allowed disabled:opacity-50',
         VARIANT_CLASSES[variant],
         SIZE_CLASSES[size],

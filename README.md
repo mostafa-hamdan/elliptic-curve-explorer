@@ -7,48 +7,133 @@ OnCurve is a learning app for elliptic curves over a prime field, written Ep(a, 
 Given p, a and b it finds every point on the curve, adds two points and multiplies a
 point by a scalar. Every result shows the same steps you would write when solving it by
 hand: the slope, the modular inverse by the extended Euclidean algorithm, x₃ and y₃, and
-the double-and-add table.
+the double-and-add table. It works on classroom curves such as E23(1, 1) and on the real
+256-bit curves secp256k1 and NIST P-256.
 
-## Run it
+**Live version:** coming with the hosted deployment (the app runs fully on your own
+computer in the meantime, see below).
+
+![The Add points tab with the full hand-method working](docs/screenshots/explorer-add.png)
+
+## Quick start
 
 You need [Node.js](https://nodejs.org) LTS (version 22 or newer). Nothing else.
 
-    npm install
-    npm start
+1. Download or clone this folder.
+2. Run the one-time setup (installs, creates the local database and the demo account,
+   builds the website):
 
-Then open http://localhost:3000 in a browser. `npm start` builds the website and starts
-the server; press Ctrl+C to stop it.
+       npm run setup
 
-## What it does
+3. Start the app; it opens in your browser:
+
+       npm start
+
+On Windows you can instead double-click **`start-windows.bat`**; on macOS,
+**`start-mac.command`**. Both check that Node.js is installed and run the setup the first
+time. Everything except the assistant's optional AI mode works without internet.
+
+### Demo account
+
+| Email                | Password             |
+| -------------------- | -------------------- |
+| `demo@oncurve.local` | `Elliptic-Demo-2026` |
+
+It comes with saved curves, a saved point and a short history. Its recovery codes (for
+trying "Forgot your password?") are written to `data/demo-recovery-codes.txt` by the
+setup. An account is optional: every calculation works as a guest.
+
+## Features
+
+**The three tasks**
 
 - **Curve setup** with live checks: p must be a prime greater than 3, a and b are reduced
-  mod p, and singular curves (4a³ + 27b² ≡ 0) are rejected with the reason.
-- **Find all points**: a paged table with the point at infinity O, the total count, the
-  Hasse bound check and a plot. Runs in the background with a progress bar.
-- **Add two points**, including doubling, with every step of the working.
-- **Multiply a point by a scalar** with the double-and-add table; each row opens to show
-  its own working. Works for textbook curves and for real 256-bit curves.
-- **Example curves**: E23(1, 1), E17(2, 2) and other textbook curves, plus secp256k1 and
-  NIST P-256.
-- Light and dark themes, and clear messages for every kind of wrong input.
+  mod p, singular curves (4a³ + 27b² ≡ 0) are refused with the reason. Seven example
+  curves, from E23(1, 1) and E17(2, 2) to secp256k1 and NIST P-256.
+- **Find all points** for p up to 200,000: runs in the background with a progress bar,
+  then shows the count with Hasse's bound, a paged table, and an interactive plot (hover
+  for coordinates, click to choose P or Q, zoom and drag; a density view for large p).
+- **Add two points** (and doubling) with every step written out.
+- **Multiply a point** by any scalar up to 1024 bits with the double-and-add table; any
+  row opens to show its own working. An animation walks P, 2P, 3P, … back to O.
 
-What the app cannot do is listed openly on its Limitations page.
+**Learning**
 
-## Project layout
+- **Learn** page: the curve over the real numbers with the chord-and-reflect picture, next
+  to the same addition mod p; double-and-add; why ECC is secure, with a key exchange worked
+  out by the engine.
+- **Practice** mode: solve an addition, a doubling, an inverse, an on-curve check or a
+  multiplication by hand; the app checks each step and points to the first mistake.
+- **Assistant**: answers questions and explains your last result from the engine's own
+  step data. It works offline; with a server key and a signed-in user it can use AI mode
+  (Claude Haiku 5.5), whose tools are backed by the same engine.
+- Guided **tour** on the first visit (replayable), **Help** page, keyboard shortcuts.
 
-| Folder        | What lives there                                           |
-| ------------- | ---------------------------------------------------------- |
-| `shared/ecc/` | The elliptic curve engine (BigInt, no dependencies).       |
-| `client/`     | The website (React, Vite, Tailwind CSS).                   |
-| `server/`     | The Node.js server (Fastify) that serves the website.      |
-| `tests/`      | Unit and property tests, and browser tests in `tests/e2e`. |
-| `docs/`       | Design notes.                                              |
+**Comfort and export**
+
+- Light and dark themes, four text sizes, Reset and Clear all, copy buttons.
+- CSV downloads of the points, the steps of an addition and the double-and-add table; the
+  plot as a PNG picture; a printable report (or PDF) of everything calculated.
+
+**Accounts (optional)**
+
+- Save curves and points, a history of every calculation with one-click reload, and
+  preferences and practice progress kept with the account.
+- Security center: change password, two-factor authentication with an authenticator app,
+  recovery codes, signed-in sessions (end any or all), recent activity, delete the account.
+  How each protection works is in [SECURITY.md](SECURITY.md).
+
+|                                                                                 |                                                                                           |
+| ------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| ![All points with the plot and the table](docs/screenshots/explorer-points.png) | ![A 256-bit multiplication in the dark theme](docs/screenshots/multiply-256-bit-dark.png) |
+| ![The Learn page](docs/screenshots/learn.png)                                   | ![Practice mode pointing to the first wrong step](docs/screenshots/practice-dark.png)     |
+
+## Limitations
+
+Stated openly, and also on the app's Limitations page:
+
+- Listing every point works up to p = 200,000; adding and multiplying work for any prime
+  up to 1024 bits, including the 256-bit curves.
+- The plot draws single dots up to 400 values across and a density view beyond.
+- Only curves y² = x³ + ax + b over a prime field with p > 3.
+- Educational use only: the calculations are not hardened against timing attacks.
+- Primality is proven below about 3.3 × 10²⁴ and probabilistic (24 Miller-Rabin bases)
+  above.
+- AI mode needs internet and a server key; its wording can be imperfect, although its
+  numbers come from the engine.
+- No email: a lost password is reset with a recovery code.
+- Tested on current Chrome and Edge; Firefox is not verified yet.
+
+## Turning on the assistant's AI mode (optional)
+
+Put a key in the file **`.env`** in the project folder, on the line
+**`ANTHROPIC_API_KEY=`**, then restart the app. The key stays on the server; never paste
+it anywhere else. Without a key the assistant uses its offline helper.
+
+## Troubleshooting
+
+| Problem                                | What to do                                                                               |
+| -------------------------------------- | ---------------------------------------------------------------------------------------- |
+| `node` is not recognised               | Install Node.js LTS from nodejs.org, then open a new terminal window.                    |
+| `npm start` says the app is not set up | Run `npm run setup` once first.                                                          |
+| The browser does not open              | Open the address printed in the window (normally http://localhost:3000).                 |
+| Port 3000 is busy                      | The app moves to the next free port and prints it. To choose one: `PORT=4000 npm start`. |
+| The page is blank                      | Use a current Chrome or Edge, and keep the window that runs the app open.                |
+| Starting from scratch                  | Stop the app, delete the `data` folder, run `npm run setup` again.                       |
 
 ## Development
 
-    npm run dev        # website with live reload on http://localhost:5173
-    npm run check      # lint, type check, unit and property tests
-    npm run test:e2e   # browser tests (first run: npx playwright install chromium)
+    npm run dev        # website with live reload on http://localhost:5173 (run `npm run serve` too for the API)
+    npm run check      # lint, type check, unit, property and server tests
+    npm run test:e2e   # browser tests (first time: npx playwright install chromium)
+
+| Folder        | What lives there                                                    |
+| ------------- | ------------------------------------------------------------------- |
+| `shared/ecc/` | The elliptic curve engine (BigInt, no dependencies).                |
+| `client/`     | The website (React, Vite, Tailwind CSS).                            |
+| `server/`     | The Node.js server (Fastify), accounts and the assistant's AI mode. |
+| `tests/`      | Unit, property and server tests, and browser tests in `tests/e2e`.  |
+| `docs/`       | Design notes and screenshots.                                       |
 
 The engine is checked against an exhaustive search for every curve over the primes 5, 7,
 11, 13, 17, 23 and 97, against the group laws, and against an independent library for

@@ -100,7 +100,7 @@ export function TextField({
         aria-invalid={hasError}
         aria-describedby={hasMessage ? messageId : undefined}
         className={cx(
-          'block min-h-10 w-full resize-none overflow-hidden rounded-lg border bg-surface px-3 py-[0.5625rem] font-mono text-sm leading-5 break-all text-ink transition-colors',
+          'block min-h-10 w-full resize-none overflow-hidden rounded-lg border bg-surface px-3 py-[0.5625rem] font-mono text-sm leading-5 wrap-anywhere text-ink transition-colors',
           'placeholder:text-muted/70 disabled:cursor-not-allowed disabled:bg-sunken disabled:text-muted',
           hasError
             ? 'border-danger focus-visible:outline-danger'

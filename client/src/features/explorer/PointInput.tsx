@@ -244,7 +244,7 @@ export function PointInput({
             </p>
           )}
           {listing.state.status === 'idle' && (
-            <Button variant="ghost" size="sm" icon="list" onClick={listing.start}>
+            <Button variant="ghost" size="sm" icon="list" wrap onClick={listing.start}>
               Load the points to pick from a list
             </Button>
           )}

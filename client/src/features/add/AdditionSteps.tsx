@@ -55,7 +55,7 @@ function Step({ number, title, children }: StepProps) {
 
 /** One line of working, in the number font. Long numbers wrap instead of overflowing. */
 function Line({ children }: { children: ReactNode }) {
-  return <p className="font-mono text-note leading-relaxed break-all text-ink">{children}</p>;
+  return <p className="font-mono text-note leading-relaxed wrap-anywhere text-ink">{children}</p>;
 }
 
 /** The final value of a line, emphasised. */
@@ -89,11 +89,11 @@ function EuclidTable({ inverse }: EuclidTableProps) {
         <tbody>
           {inverse.steps.map((step, index) => (
             <tr key={index} className="border-t border-line align-top text-ink">
-              <td className="px-3 py-1.5 break-all">
+              <td className="px-3 py-1.5 wrap-anywhere">
                 {step.dividend.toString()} = {step.quotient.toString()} · {step.divisor.toString()}{' '}
                 + {step.remainder.toString()}
               </td>
-              <td className="px-3 py-1.5 break-all">
+              <td className="px-3 py-1.5 wrap-anywhere">
                 {plain(step.tDividend)} − {step.quotient.toString()} · {signed(step.tDivisor)} ={' '}
                 {plain(step.tRemainder)}
               </td>
