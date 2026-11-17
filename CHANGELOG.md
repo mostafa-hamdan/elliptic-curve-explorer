@@ -6,6 +6,22 @@ All changes a user can see are listed here, newest first.
 
 ### Added
 
+- A landing page at `/` with an animated chord-and-tangent picture, real screenshots of
+  each feature, how it works, security, questions and answers, and an About section. The
+  Explorer moved to `/explorer` and never asks for a sign-in.
+- Four "Learn ECC" topic pages (`/learn/...`) with worked examples computed by the engine.
+- Guests see a closable banner, and Save explains that saving needs an account; after
+  signing in or up the app returns to the same screen and finishes the save.
+- A new look: Fraunces for titles, Instrument Sans for text, a teal and coral palette in
+  both themes, and a logo drawn from the curve y² = x³ − x + 1.
+- The multiples animation has a Previous button, a clickable list and labeled dots.
+
+### Changed
+
+- Passwords rated below Fair are refused, and repeated letters, keyboard runs and
+  sequences now lower the rating.
+- American English throughout.
+
 - Accounts (optional): sign-up with a password strength meter, sign-in, two-factor
   authentication with an authenticator app, ten recovery codes for a lost password, a
   Security center (password, 2FA, recovery codes, sessions, activity, delete account),

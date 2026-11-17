@@ -42,7 +42,22 @@ These are meant as raw material for the project report.
   between threads without copying and keep 200,000 points cheap to hold.
 - **One file of design tokens** (`client/src/styles/tokens.css`) holds every color,
   font and radius. Tailwind's built-in palette is switched off, so a component cannot
-  use a color that is not a token. P is always blue, Q amber and results green.
+  use a color that is not a token. P is always teal (the brand color), Q coral (the one
+  accent) and results plum, in both themes.
+- **Three bundled fonts with separate jobs.** Fraunces (a soft serif, with its optical-size
+  axis) for page and section titles gives the app its own voice; Instrument Sans keeps body
+  text compact and clean; JetBrains Mono keeps numbers in columns. All are self-hosted, so
+  the Content-Security-Policy still allows fonts from the site only.
+- **The curve is the brand.** The logo, the favicon and the landing picture all draw
+  y² = x³ − x + 1 with a chord through three of its points, the picture behind every
+  addition. The landing animation stops for people who ask for reduced motion and has a
+  pause button for everyone.
+- **A landing page in front of the Explorer, never a sign-in wall.** The Explorer moved to
+  `/explorer`; the landing page offers it first. Guests can press Save: the save is parked
+  in the tab's session storage (30 minutes at most, addresses inside the site only) and
+  finished when the guest is back on the same screen after signing in or up.
+- **Landing screenshots come from the real app** (`scripts/capture-screens.ts`), in light
+  and dark versions that follow the chosen theme.
 
 ## Accounts and security
 

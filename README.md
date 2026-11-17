@@ -13,7 +13,10 @@ the double-and-add table. It works on classroom curves such as E23(1, 1) and on 
 **Live version:** coming with the hosted deployment (the app runs fully on your own
 computer in the meantime, see below).
 
-![The Add points tab with the full hand-method working](docs/screenshots/explorer-add.png)
+![The OnCurve landing page with the chord-and-tangent picture](docs/screenshots/landing-light.jpg)
+
+The app opens on a short landing page. **Open the explorer** goes straight to the
+calculator, with no account; **Sign in / Create account** is only needed to save work.
 
 ## Quick start
 
@@ -59,6 +62,9 @@ setup. An account is optional: every calculation works as a guest.
 
 **Learning**
 
+- **Learn ECC** topics: four short reads (what an elliptic curve is, point addition,
+  scalar multiplication, ECC in real life with P-256 and secp256k1), each with a worked
+  example computed by the engine and a button that opens it in the Explorer.
 - **Learn** page: the curve over the real numbers with the chord-and-reflect picture, next
   to the same addition mod p; double-and-add; why ECC is secure, with a key exchange worked
   out by the engine.
@@ -77,16 +83,21 @@ setup. An account is optional: every calculation works as a guest.
 
 **Accounts (optional)**
 
+- Guests see a small banner (closable for the session) and can press Save too: it explains
+  that saving needs an account, and after signing in or signing up the app returns to the
+  same screen and finishes the save.
 - Save curves and points, a history of every calculation with one-click reload, and
   preferences and practice progress kept with the account.
 - Security center: change password, two-factor authentication with an authenticator app,
   recovery codes, signed-in sessions (end any or all), recent activity, delete the account.
   How each protection works is in [SECURITY.md](SECURITY.md).
 
-|                                                                                 |                                                                                           |
-| ------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
-| ![All points with the plot and the table](docs/screenshots/explorer-points.png) | ![A 256-bit multiplication in the dark theme](docs/screenshots/multiply-256-bit-dark.png) |
-| ![The Learn page](docs/screenshots/learn.png)                                   | ![Practice mode pointing to the first wrong step](docs/screenshots/practice-dark.png)     |
+|                                                                                   |                                                                       |
+| --------------------------------------------------------------------------------- | --------------------------------------------------------------------- |
+| ![All points with the plot and the table](client/public/screens/points-light.jpg) | ![Point addition with every step](client/public/screens/add-dark.jpg) |
+| ![A 256-bit multiplication](client/public/screens/multiply-light.jpg)             | ![Practice mode](client/public/screens/practice-dark.jpg)             |
+
+The pictures are taken from the running app by `npx tsx scripts/capture-screens.ts`.
 
 ## Limitations
 
