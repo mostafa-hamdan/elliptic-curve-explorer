@@ -50,7 +50,12 @@ export async function api<T>(
     'X-OnCurve-Client': 'web',
   };
   if (body !== undefined) headers['Content-Type'] = 'application/json';
-  if (method !== 'GET') headers['X-CSRF-Token'] = csrfToken;
+  if (method !== 'GET') {
+    // A form sent within moments of the page loading can beat the first session request,
+    // which is what delivers the token. Fetch it first instead of sending an empty one.
+    if (csrfToken === '') await api('GET', '/api/auth/session').catch(() => undefined);
+    headers['X-CSRF-Token'] = csrfToken;
+  }
 
   let response: Response;
   try {
