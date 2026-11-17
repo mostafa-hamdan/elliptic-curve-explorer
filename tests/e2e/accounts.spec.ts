@@ -62,6 +62,10 @@ test.describe('accounts', () => {
     await page.getByRole('button', { name: 'Create account' }).click();
     await expect(page.getByTestId('signup-error')).toContainText('most common passwords');
 
+    await page.getByLabel('Password', { exact: true }).fill('aaaaaasassdd');
+    await expect(page.getByTestId('password-meter')).toContainText('Not accepted');
+    await expect(page.getByTestId('password-meter')).toContainText('only 3 different characters');
+
     await page.getByLabel('Password', { exact: true }).fill(PASSWORD);
     await expect(page.getByTestId('password-meter')).toContainText(/Strong|Very strong/);
     await page.getByLabel('Type the password again').fill('something else entirely');

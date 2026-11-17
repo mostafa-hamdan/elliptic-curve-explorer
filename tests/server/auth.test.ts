@@ -55,7 +55,9 @@ describe('sign-up', () => {
     const cases: Array<[string, RegExp]> = [
       ['short-pw', /at least 12 characters/],
       ['password1234', /most common passwords/],
-      ['aaaaaaaaaaaa', /too easy to guess|most common/],
+      ['aaaaaaaaaaaa', /at least Fair is needed/],
+      ['aaaaaasassdd', /only 3 different characters/],
+      ['qwertyuiopas', /keys next to each other/],
     ];
     for (const [password, message] of cases) {
       const response = await browser.request('POST', '/api/auth/signup', {
@@ -91,6 +93,19 @@ describe('sign-up', () => {
       expect(response.statusCode, JSON.stringify(body)).toBe(400);
       expect(response.json().error).toMatch(/not valid/);
     }
+  });
+});
+
+describe('password change', () => {
+  it('refuses a new password rated below Fair', async () => {
+    const browser = new TestBrowser(app);
+    await browser.signUp('weak-change@example.com');
+    const response = await browser.request('POST', '/api/auth/password', {
+      currentPassword: GOOD_PASSWORD,
+      newPassword: 'aaaaaasassdd',
+    });
+    expect(response.statusCode).toBe(400);
+    expect(response.json().error).toMatch(/rated Weak; at least Fair is needed/);
   });
 });
 
