@@ -18,7 +18,7 @@ import {
   startSession,
   type User,
 } from '../auth/sessions.ts';
-import { keyedHash, normaliseRecoveryCode, open, seal } from '../security/crypto.ts';
+import { keyedHash, normalizeRecoveryCode, open, seal } from '../security/crypto.ts';
 import { getDecoyHash, hashPassword, verifyPassword } from '../security/passwords.ts';
 import {
   clearRateLimit,
@@ -32,7 +32,7 @@ import {
   emailSchema,
   fail,
   newRecoveryCodes,
-  normaliseEmail,
+  normalizeEmail,
   passwordSchema,
   requireAuth,
 } from './shared.ts';
@@ -108,7 +108,7 @@ async function useRecoveryCode(
   code: string,
 ): Promise<boolean> {
   const { db, config } = app.ctx;
-  const codeHash = keyedHash(config.sessionSecret, normaliseRecoveryCode(code));
+  const codeHash = keyedHash(config.sessionSecret, normalizeRecoveryCode(code));
   const updated = await db
     .update(recoveryCodes)
     .set({ usedAt: Date.now() })
@@ -191,7 +191,7 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
           `Too many new accounts from this network. Try again in ${describeWait(limit.retryAfterMs)}.`,
         );
       }
-      const email = normaliseEmail(request.body.email);
+      const email = normalizeEmail(request.body.email);
       const check = checkPassword(request.body.password, email);
       if (check.problem) return fail(reply, 400, check.problem);
 
@@ -228,7 +228,7 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
       },
     },
     async (request, reply) => {
-      const email = normaliseEmail(request.body.email);
+      const email = normalizeEmail(request.body.email);
       const accountKey = `signin-account:${email}`;
 
       const network = await hitRateLimit(
@@ -316,7 +316,7 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
       },
     },
     async (request, reply) => {
-      const email = normaliseEmail(request.body.email);
+      const email = normalizeEmail(request.body.email);
       const network = await hitRateLimit(db, `recover-ip:${request.ip}`, 10, WINDOW_MS);
       const account = await hitRateLimit(db, `recover-account:${email}`, 5, WINDOW_MS);
       if (!network.allowed || !account.allowed) {

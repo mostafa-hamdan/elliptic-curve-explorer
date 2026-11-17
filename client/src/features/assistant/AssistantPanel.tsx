@@ -86,16 +86,16 @@ export function AssistantPanel() {
   // or out. Without a server (or on any error) the offline helper is used.
   useEffect(() => {
     if (!open || status !== 'ready') return;
-    let cancelled = false;
+    let canceled = false;
     api<AiStatus>('GET', '/api/assistant/status')
       .then((result) => {
-        if (!cancelled) setAiStatus(result);
+        if (!canceled) setAiStatus(result);
       })
       .catch(() => {
-        if (!cancelled) setAiStatus({ ai: false, reason: 'AI mode is not available.' });
+        if (!canceled) setAiStatus({ ai: false, reason: 'AI mode is not available.' });
       });
     return () => {
-      cancelled = true;
+      canceled = true;
     };
   }, [open, status, user]);
 

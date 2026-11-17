@@ -7,7 +7,7 @@ import type { ExplorerTab } from '../explorer/ExplorerContext.tsx';
 
 /** One step of the tour. */
 export interface TourStep {
-  /** Value of the `data-tour` attribute to highlight; null for a centred message. */
+  /** Value of the `data-tour` attribute to highlight; null for a centered message. */
   target: string | null;
   title: string;
   body: string;
@@ -63,7 +63,7 @@ export const TOUR_STEPS: ReadonlyArray<TourStep> = [
   },
   {
     target: 'nav',
-    title: 'Learn, practise and get help',
+    title: 'Learn, practice and get help',
     body: 'Learn explains elliptic curves in pictures, Practice lets you solve steps by hand and checks them, and Help answers common questions.',
   },
   {

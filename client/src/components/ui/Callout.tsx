@@ -6,7 +6,7 @@ import type { ReactNode } from 'react';
 import { cx } from '../../lib/cx.ts';
 import { Icon, type IconName } from './Icon.tsx';
 
-/** What kind of message this is; decides the colour and the icon. */
+/** What kind of message this is; decides the color and the icon. */
 export type CalloutTone = 'info' | 'success' | 'warning' | 'danger';
 
 interface CalloutProps {

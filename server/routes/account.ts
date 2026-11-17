@@ -16,7 +16,7 @@ import {
 } from '../db/schema.ts';
 import { cookieOptions, issueCsrfToken, SESSION_COOKIE } from '../auth/sessions.ts';
 import { checkTotp } from '../security/totp.ts';
-import { keyedHash, normaliseRecoveryCode, open } from '../security/crypto.ts';
+import { keyedHash, normalizeRecoveryCode, open } from '../security/crypto.ts';
 import { verifyPassword } from '../security/passwords.ts';
 import { codeSchema, fail, passwordSchema, requireAuth } from './shared.ts';
 
@@ -122,7 +122,7 @@ export async function accountRoutes(app: FastifyInstance): Promise<void> {
                   eq(recoveryCodes.userId, user.id),
                   eq(
                     recoveryCodes.codeHash,
-                    keyedHash(config.sessionSecret, normaliseRecoveryCode(code)),
+                    keyedHash(config.sessionSecret, normalizeRecoveryCode(code)),
                   ),
                 ),
               )

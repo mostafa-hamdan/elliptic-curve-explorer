@@ -1,5 +1,5 @@
 /**
- * Sets the browser tab title for a page, so each page is recognisable in the tab bar
+ * Sets the browser tab title for a page, so each page is recognizable in the tab bar
  * and in the browser history.
  */
 import { useEffect } from 'react';

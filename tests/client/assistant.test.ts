@@ -40,7 +40,7 @@ describe('offline helper: built-in topics', () => {
     ['how does ECDH key exchange work', /Alice/],
     ['what is secp256k1', /Bitcoin/],
     ['can I type hex?', /0x/],
-    ['How do I practise for the exam?', /Check my answers/],
+    ['How do I practice for the exam?', /Check my answers/],
     ['can I download the table as csv?', /Printable report/],
   ];
   for (const [question, expected] of cases) {
@@ -162,7 +162,7 @@ describe('offline helper: scope and limits', () => {
   });
 
   it('offers the list of things it can do for unknown on-subject questions', () => {
-    expect(answerOffline('tell me about the curve colour', EMPTY).source).toBe('fallback');
+    expect(answerOffline('tell me about the curve color', EMPTY).source).toBe('fallback');
   });
 });
 

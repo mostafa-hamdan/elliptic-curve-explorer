@@ -114,7 +114,7 @@ it anywhere else. Without a key the assistant uses its offline helper.
 
 | Problem                                | What to do                                                                               |
 | -------------------------------------- | ---------------------------------------------------------------------------------------- |
-| `node` is not recognised               | Install Node.js LTS from nodejs.org, then open a new terminal window.                    |
+| `node` is not recognized               | Install Node.js LTS from nodejs.org, then open a new terminal window.                    |
 | `npm start` says the app is not set up | Run `npm run setup` once first.                                                          |
 | The browser does not open              | Open the address printed in the window (normally http://localhost:3000).                 |
 | Port 3000 is busy                      | The app moves to the next free port and prints it. To choose one: `PORT=4000 npm start`. |

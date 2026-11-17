@@ -38,7 +38,7 @@ interface SliderProps {
   onChange: (value: number) => void;
 }
 
-/** A labelled range slider with its current value. */
+/** A labeled range slider with its current value. */
 function Slider({ label, value, min, max, step, onChange }: SliderProps) {
   const id = useId();
   return (

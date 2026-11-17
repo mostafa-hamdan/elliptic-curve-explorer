@@ -1,6 +1,6 @@
 /**
  * Small helpers shared by the engine tests.
- * They are written in the most obvious way possible (plain loops, no clever maths) so
+ * They are written in the most obvious way possible (plain loops, no clever math) so
  * that they can act as an independent check on the engine.
  */
 import { add, createCurve, listPoints, type Curve, type Point } from '@shared/ecc/index.ts';

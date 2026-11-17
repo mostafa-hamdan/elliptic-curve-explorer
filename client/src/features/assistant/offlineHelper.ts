@@ -53,7 +53,7 @@ export const SUGGESTIONS: ReadonlyArray<string> = [
 ];
 
 /** Lower-case the question and straighten curly quotes so matching is predictable. */
-function normalise(question: string): string {
+function normalize(question: string): string {
   return question
     .toLowerCase()
     .replace(/[‘’]/g, "'")
@@ -174,7 +174,7 @@ function answerPrime(numberText: string): HelperAnswer {
  * @returns the answer and where it came from.
  */
 export function answerOffline(question: string, context: HelperContext): HelperAnswer {
-  const text = normalise(question);
+  const text = normalize(question);
   if (text === '')
     return { text: 'Type a question, or pick one of the suggestions.', source: 'empty' };
   if (question.length > MAX_QUESTION_LENGTH) {

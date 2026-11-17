@@ -1,6 +1,6 @@
 /*
- * Design tokens: the single source of every colour, font, radius and shadow in the app.
- * Components never hard-code a colour; they use the Tailwind names declared at the
+ * Design tokens: the single source of every color, font, radius and shadow in the app.
+ * Components never hard-code a color; they use the Tailwind names declared at the
  * bottom of this file (for example `bg-surface` or `text-muted`), which point at the
  * variables below. The dark theme only swaps the variable values, so every screen
  * follows automatically.
@@ -22,7 +22,7 @@
   --oc-ink-soft: #3b4560;
   --oc-muted: #586179;
 
-  /* Brand colour, used for the main action and for point P */
+  /* Brand color, used for the main action and for point P */
   --oc-primary: #3848d6;
   --oc-primary-hover: #2a37b4;
   --oc-primary-ink: #ffffff;

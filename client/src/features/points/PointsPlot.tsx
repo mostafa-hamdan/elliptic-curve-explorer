@@ -25,7 +25,7 @@ const MIN_SPAN = 8;
 export interface PlotHighlight {
   label: string;
   point: Point;
-  /** Which token colour to use: P is blue, Q is amber. */
+  /** Which token color to use: P is blue, Q is amber. */
   role: 'p' | 'q';
 }
 
@@ -88,10 +88,10 @@ export function clampView(view: View, p: number): View {
 }
 
 /**
- * Read a colour token from the page, so the canvas follows the light or dark theme.
+ * Read a color token from the page, so the canvas follows the light or dark theme.
  *
  * @param name - the CSS variable, for example "--oc-primary".
- * @returns the colour value as text.
+ * @returns the color value as text.
  */
 function token(name: string): string {
   return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
@@ -126,7 +126,7 @@ export function PointsPlot({ list, highlights, onPick }: PointsPlotProps) {
     return () => observer.disconnect();
   }, []);
 
-  /** Pixel position of a field value inside the canvas (centre of its cell). */
+  /** Pixel position of a field value inside the canvas (center of its cell). */
   const toPixel = useCallback(
     (x: number, y: number) => ({
       px: MARGIN.left + ((x - view.x0 + 0.5) / view.span) * side,
@@ -254,7 +254,7 @@ export function PointsPlot({ list, highlights, onPick }: PointsPlotProps) {
     context.strokeStyle = colors.strong;
     context.strokeRect(left + 0.5, top + 0.5, side - 1, side - 1);
 
-    // The dot under the mouse: a ring in the text colour.
+    // The dot under the mouse: a ring in the text color.
     if (hover && inView(hover.x, hover.y)) {
       const { px, py } = toPixel(hover.x, hover.y);
       context.beginPath();
@@ -375,13 +375,13 @@ export function PointsPlot({ list, highlights, onPick }: PointsPlotProps) {
    * Zoom by a factor around a point of the field, keeping that point where it is.
    *
    * @param factor - below 1 zooms in, above 1 zooms out.
-   * @param centre - the field position to zoom around; defaults to the middle of the view.
+   * @param center - the field position to zoom around; defaults to the middle of the view.
    */
   const zoom = useCallback(
-    (factor: number, centre?: { x: number; y: number }) => {
+    (factor: number, center?: { x: number; y: number }) => {
       setView((current) => {
-        const cx = centre?.x ?? current.x0 + current.span / 2;
-        const cy = centre?.y ?? current.y0 + current.span / 2;
+        const cx = center?.x ?? current.x0 + current.span / 2;
+        const cy = center?.y ?? current.y0 + current.span / 2;
         const span = current.span * factor;
         return clampView(
           {

@@ -28,7 +28,7 @@ interface DialogProps {
   testId?: string;
 }
 
-/** A centred modal window with a title, a close button and optional footer buttons. */
+/** A centered modal window with a title, a close button and optional footer buttons. */
 export function Dialog({
   open,
   onClose,

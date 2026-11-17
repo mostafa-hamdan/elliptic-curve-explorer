@@ -1,5 +1,5 @@
 /**
- * Labelled drop-down list, styled to match the text inputs.
+ * Labeled drop-down list, styled to match the text inputs.
  * It wraps the browser's own <select>, which is fully keyboard and screen-reader
  * accessible on every platform.
  */

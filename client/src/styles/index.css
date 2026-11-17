@@ -33,7 +33,7 @@
     font-variant-ligatures: none;
   }
 
-  /* One visible focus ring for keyboard users, in the brand colour. */
+  /* One visible focus ring for keyboard users, in the brand color. */
   :focus-visible {
     outline: 2px solid var(--oc-primary);
     outline-offset: 2px;

@@ -20,7 +20,7 @@ export interface AffinePoint {
 /**
  * A point of the group: an ordinary point, or `null` for the point at infinity O.
  * O is the identity of the group (P + O = P) and has no coordinates, which is why it is
- * modelled as "no point" rather than as a special pair of numbers.
+ * modeled as "no point" rather than as a special pair of numbers.
  */
 export type Point = AffinePoint | null;
 

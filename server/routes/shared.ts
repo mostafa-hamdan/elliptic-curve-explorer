@@ -9,7 +9,7 @@ import type { Database } from '../db/client.ts';
 import { recoveryCodes } from '../db/schema.ts';
 import type { AssistantClient } from '../assistant/run.ts';
 import type { Auth } from '../auth/sessions.ts';
-import { keyedHash, normaliseRecoveryCode, recoveryCode } from '../security/crypto.ts';
+import { keyedHash, normalizeRecoveryCode, recoveryCode } from '../security/crypto.ts';
 
 declare module 'fastify' {
   interface FastifyInstance {
@@ -63,8 +63,8 @@ export function requireAuth(request: FastifyRequest, reply: FastifyReply): Auth 
   return request.auth;
 }
 
-/** Normalise an email for storage and lookup. */
-export function normaliseEmail(email: string): string {
+/** Normalize an email for storage and lookup. */
+export function normalizeEmail(email: string): string {
   return email.trim().toLowerCase();
 }
 
@@ -89,7 +89,7 @@ export async function newRecoveryCodes(
   await db.insert(recoveryCodes).values(
     codes.map((code) => ({
       userId,
-      codeHash: keyedHash(config.sessionSecret, normaliseRecoveryCode(code)),
+      codeHash: keyedHash(config.sessionSecret, normalizeRecoveryCode(code)),
       usedAt: null,
     })),
   );

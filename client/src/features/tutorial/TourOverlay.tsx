@@ -18,14 +18,14 @@ const CARD_GAP = 12;
 /** Minimum distance between the card and the window edge, in pixels. */
 const EDGE = 16;
 
-/** Where the spotlight sits on screen (viewport pixels), or null for a centred step. */
+/** Where the spotlight sits on screen (viewport pixels), or null for a centered step. */
 type Box = { top: number; left: number; width: number; height: number } | null;
 
 /**
  * Work out where the card goes: below the spotlight if it fits, otherwise above, otherwise
  * beside it, otherwise at the bottom of the window. Always kept fully inside the window.
  *
- * @param box - the spotlight, or null to centre the card.
+ * @param box - the spotlight, or null to center the card.
  * @param card - the card's measured size.
  * @returns the card's top-left corner in viewport pixels.
  */

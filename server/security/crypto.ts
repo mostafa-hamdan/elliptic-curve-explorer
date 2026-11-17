@@ -108,11 +108,11 @@ export function recoveryCode(): string {
 }
 
 /**
- * Normalise a typed recovery code: upper case, without spaces or hyphens.
+ * Normalize a typed recovery code: upper case, without spaces or hyphens.
  *
  * @param code - what the user typed.
  * @returns the code in the form it is hashed in.
  */
-export function normaliseRecoveryCode(code: string): string {
+export function normalizeRecoveryCode(code: string): string {
   return code.toUpperCase().replace(/[\s-]/g, '');
 }

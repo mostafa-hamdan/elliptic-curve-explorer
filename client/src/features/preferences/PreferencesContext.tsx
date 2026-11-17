@@ -120,7 +120,7 @@ export function usePreferences(): PreferencesContextValue {
   return value;
 }
 
-/** Shorthand for the theme part only, used by components that draw in theme colours. */
+/** Shorthand for the theme part only, used by components that draw in theme colors. */
 export function useTheme(): Pick<PreferencesContextValue, 'theme' | 'toggleTheme'> {
   const { theme, toggleTheme } = usePreferences();
   return { theme, toggleTheme };

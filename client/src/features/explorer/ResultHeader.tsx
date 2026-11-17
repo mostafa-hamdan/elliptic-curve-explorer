@@ -21,7 +21,7 @@ interface ResultHeaderProps {
   testId: string;
 }
 
-/** Large result line with a copy button. The answer is green, the colour of results. */
+/** Large result line with a copy button. The answer is green, the color of results. */
 export function ResultHeader({ expression, result, rule, detail, testId }: ResultHeaderProps) {
   const text = pointText(result);
   return (

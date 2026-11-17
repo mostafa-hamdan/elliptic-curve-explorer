@@ -5,11 +5,11 @@ These are meant as raw material for the project report.
 
 ## Engine
 
-- **The point at infinity is `null`.** O has no coordinates, so it is modelled as "no
+- **The point at infinity is `null`.** O has no coordinates, so it is modeled as "no
   point" instead of a special pair of numbers. Every operation handles it explicitly.
 - **Two versions of each operation.** `add` and `multiply` return only the answer and are
   used inside loops; `addWithSteps` and `multiplyWithSteps` also return every
-  intermediate number. The screens never redo the maths: they only display these traces.
+  intermediate number. The screens never redo the math: they only display these traces.
 - **Double-and-add reads the bits from the left.** That matches the table taught in
   class: start with R = P, then for each further bit double, and add P when the bit is 1.
 - **Negative scalars are accepted**, using (−k)P = k(−P). The table then works with |k|
@@ -40,9 +40,9 @@ These are meant as raw material for the project report.
   closer than one pixel, so the plot shades cells by the number of points in them.
 - **The list of points is sent from the background worker as typed arrays**, which move
   between threads without copying and keep 200,000 points cheap to hold.
-- **One file of design tokens** (`client/src/styles/tokens.css`) holds every colour,
+- **One file of design tokens** (`client/src/styles/tokens.css`) holds every color,
   font and radius. Tailwind's built-in palette is switched off, so a component cannot
-  use a colour that is not a token. P is always blue, Q amber and results green.
+  use a color that is not a token. P is always blue, Q amber and results green.
 
 ## Accounts and security
 

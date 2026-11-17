@@ -31,7 +31,7 @@ export function downloadBlob(blob: Blob, filename: string): void {
  * @param type - the media type, CSV by default.
  */
 export function downloadText(text: string, filename: string, type = 'text/csv'): void {
-  downloadBlob(new Blob(['﻿', text], { type: `${type};charset=utf-8` }), filename);
+  downloadBlob(new Blob(['\uFEFF', text], { type: `${type};charset=utf-8` }), filename);
 }
 
 /**
@@ -39,7 +39,7 @@ export function downloadText(text: string, filename: string, type = 'text/csv'):
  * viewer (the canvas itself has transparent margins).
  *
  * @param canvas - the drawing.
- * @param background - the colour to put behind it.
+ * @param background - the color to put behind it.
  * @param filename - the suggested file name.
  * @returns a promise that settles once the file has been handed to the browser.
  * @throws when the browser cannot turn the drawing into a picture.

@@ -1,5 +1,5 @@
 /**
- * The shared frame of the sign-in, sign-up and recovery pages: a centred card with a
+ * The shared frame of the sign-in, sign-up and recovery pages: a centered card with a
  * title, plus the notice shown when accounts are not available (no server reachable).
  */
 import type { ReactNode } from 'react';
@@ -16,7 +16,7 @@ interface AuthLayoutProps {
   footer?: ReactNode;
 }
 
-/** A centred card for an account form. */
+/** A centered card for an account form. */
 export function AuthLayout({ title, description, children, footer }: AuthLayoutProps) {
   const { status } = useAuth();
   return (

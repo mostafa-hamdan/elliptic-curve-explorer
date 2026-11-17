@@ -58,7 +58,7 @@ function Line({ children }: { children: ReactNode }) {
   return <p className="font-mono text-note leading-relaxed wrap-anywhere text-ink">{children}</p>;
 }
 
-/** The final value of a line, emphasised. */
+/** The final value of a line, emphasized. */
 function Answer({ children }: { children: ReactNode }) {
   return <strong className="font-semibold text-primary">{children}</strong>;
 }

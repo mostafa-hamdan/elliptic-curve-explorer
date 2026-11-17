@@ -418,19 +418,19 @@ function ActivitySection() {
   );
 
   useEffect(() => {
-    let cancelled = false;
+    let canceled = false;
     api<{ activity: Array<{ event: string; device: string; at: number }> }>(
       'GET',
       '/api/account/activity',
     )
       .then((result) => {
-        if (!cancelled) setRows(result.activity);
+        if (!canceled) setRows(result.activity);
       })
       .catch(() => {
-        if (!cancelled) setRows([]);
+        if (!canceled) setRows([]);
       });
     return () => {
-      cancelled = true;
+      canceled = true;
     };
   }, []);
 

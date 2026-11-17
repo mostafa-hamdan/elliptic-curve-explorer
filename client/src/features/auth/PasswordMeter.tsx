@@ -11,7 +11,7 @@ import type { PasswordCheck } from '@shared/passwordRules.ts';
 /** The rules module, loaded once on first use. */
 let rules: Promise<typeof PasswordRules> | null = null;
 
-/** Colour of the bar for each score from 0 to 4. */
+/** Color of the bar for each score from 0 to 4. */
 const BAR_COLORS = ['bg-danger', 'bg-danger', 'bg-warning', 'bg-success', 'bg-success'];
 
 interface PasswordMeterProps {
@@ -26,16 +26,16 @@ export function PasswordMeter({ password, email, onCheck }: PasswordMeterProps) 
   const [check, setCheck] = useState<PasswordCheck | null>(null);
 
   useEffect(() => {
-    let cancelled = false;
+    let canceled = false;
     rules ??= import('@shared/passwordRules.ts');
     void rules.then((module) => {
-      if (cancelled) return;
+      if (canceled) return;
       const next = password === '' ? null : module.checkPassword(password, email);
       setCheck(next);
       onCheck?.(next);
     });
     return () => {
-      cancelled = true;
+      canceled = true;
     };
   }, [password, email, onCheck]);
 

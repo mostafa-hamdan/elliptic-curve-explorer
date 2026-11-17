@@ -1,5 +1,5 @@
 /**
- * Labelled text input with a hint, a "this is fine" note and an error message.
+ * Labeled text input with a hint, a "this is fine" note and an error message.
  * Every number the user types goes through this component, so validation feedback
  * looks and reads the same everywhere and is announced to screen readers.
  */

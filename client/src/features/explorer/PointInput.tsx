@@ -16,7 +16,7 @@ import type { FieldCheck, PointCheck, PointDraft } from './validation.ts';
 /** Above this many points a drop-down list stops being usable; the table is better. */
 const PICKER_LIMIT = 2000;
 
-/** Colours for each point role, taken from the design tokens. */
+/** Colors for each point role, taken from the design tokens. */
 const ROLE_STYLES = {
   P: { badge: 'bg-point-p-soft text-point-p', border: 'border-point-p/30' },
   Q: { badge: 'bg-point-q-soft text-point-q', border: 'border-point-q/30' },
@@ -28,7 +28,7 @@ interface PointBadgeProps {
   className?: string;
 }
 
-/** The small coloured letter that marks P (blue) or Q (amber) everywhere in the app. */
+/** The small colored letter that marks P (blue) or Q (amber) everywhere in the app. */
 export function PointBadge({ which, className }: PointBadgeProps) {
   return (
     <span

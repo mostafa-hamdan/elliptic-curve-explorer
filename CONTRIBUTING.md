@@ -26,12 +26,12 @@ paths in shell and batch files.
 ## Code rules
 
 - TypeScript in strict mode everywhere. No `any` unless a comment explains why.
-- All curve maths uses `bigint`. Never use `number` for a field element, a coordinate or
+- All curve math uses `bigint`. Never use `number` for a field element, a coordinate or
   a scalar: 256-bit values do not fit.
 - The engine in `shared/ecc/` has no dependencies and never touches the screen or the
-  network. Screens call the engine; they never redo the maths themselves.
-- Colours, fonts, spacing and radii come from the design tokens in
-  `client/src/styles/tokens.css`. Do not hard-code a colour in a component.
+  network. Screens call the engine; they never redo the math themselves.
+- Colors, fonts, spacing and radii come from the design tokens in
+  `client/src/styles/tokens.css`. Do not hard-code a color in a component.
 - Only add a dependency that installs from prebuilt files. Setup must never need a
   compiler on Windows.
 - Secrets live in environment variables only. Never commit `.env`; list new variable
@@ -44,12 +44,12 @@ The code is read as part of the grade, so comments are part of the work.
 
 - Every file opens with two or three lines saying what it does and where it fits.
 - Every function states its purpose, inputs, output and the errors it can raise.
-- Every maths function also shows its formula.
+- Every math function also shows its formula.
 - Comments explain why, and the edge cases, in plain English. Do not restate the code.
 
 ## Tests
 
-- New behaviour comes with a test. A bug fix comes with a test that fails without the fix.
+- New behavior comes with a test. A bug fix comes with a test that fails without the fix.
 - `npm run check` (lint, type check, unit tests) must pass before every commit.
 - `npm run test:e2e` runs the browser tests. They fail on any console error or warning.
 - Never weaken or delete a failing test to get a green run. Fix the cause.

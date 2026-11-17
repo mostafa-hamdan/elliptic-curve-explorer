@@ -1,5 +1,5 @@
 /**
- * Tests for the maths behind the pictures: the real-number curve and its chord rule, the
+ * Tests for the math behind the pictures: the real-number curve and its chord rule, the
  * plot's zoom limits and tick spacing, and the list of multiples used by the animation.
  */
 import { describe, expect, it } from 'vitest';

@@ -1,5 +1,5 @@
 /**
- * A labelled one-line input for words rather than curve numbers: email addresses,
+ * A labeled one-line input for words rather than curve numbers: email addresses,
  * passwords (with a Show button), codes and names. Same look and messages as TextField.
  */
 import { useId, useState, type ReactNode } from 'react';

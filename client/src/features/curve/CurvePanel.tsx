@@ -37,7 +37,7 @@ function curveLabel(curve: Curve, bits: number | null): string {
   return equationText(curve) === null ? `This ${bits ?? ''}-bit curve` : curveName(curve);
 }
 
-/** The coloured box under the inputs that says whether the curve is usable, and why. */
+/** The colored box under the inputs that says whether the curve is usable, and why. */
 function CurveStatus({ check }: { check: CurveCheck }) {
   if (check.curve) {
     const equation = equationText(check.curve);

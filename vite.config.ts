@@ -16,7 +16,7 @@ export default defineConfig({
   root: fromRoot('./client'),
   plugins: [react(), tailwindcss()],
   resolve: {
-    // `@shared/ecc` is the one maths engine used by the website, the server and the tests.
+    // `@shared/ecc` is the one math engine used by the website, the server and the tests.
     alias: { '@shared': fromRoot('./shared') },
   },
   build: {

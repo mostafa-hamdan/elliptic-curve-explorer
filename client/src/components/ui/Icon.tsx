@@ -1,6 +1,6 @@
 /**
  * The app's icon set, drawn as inline SVG so no icon font or outside request is needed.
- * Every icon uses the current text colour and the same stroke, which keeps them
+ * Every icon uses the current text color and the same stroke, which keeps them
  * consistent with whatever button or message they sit in.
  */
 
@@ -64,7 +64,7 @@ interface IconProps {
   name: IconName;
   /** Width and height in pixels. Defaults to 18. */
   size?: number;
-  /** Extra classes, for example a colour. */
+  /** Extra classes, for example a color. */
   className?: string;
 }
 

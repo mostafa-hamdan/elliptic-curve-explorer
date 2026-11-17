@@ -1,6 +1,6 @@
 /**
  * The OnCurve mark: a small elliptic curve with one highlighted point.
- * Drawn inline so it follows the theme colours and needs no image file.
+ * Drawn inline so it follows the theme colors and needs no image file.
  */
 
 interface LogoProps {

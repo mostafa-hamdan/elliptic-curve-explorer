@@ -1,5 +1,5 @@
 /**
- * Modular arithmetic on `bigint`: the number tools that the curve maths is built from.
+ * Modular arithmetic on `bigint`: the number tools that the curve math is built from.
  * Reduction, fast powers, the extended Euclidean algorithm (with every step recorded so
  * a screen can show the hand method), primality testing and square roots modulo a prime.
  * Nothing here knows about curves; `curve.ts` and `point.ts` build on top of it.

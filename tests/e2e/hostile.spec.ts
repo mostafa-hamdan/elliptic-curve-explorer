@@ -61,7 +61,7 @@ test.describe('hostile input', () => {
     await expect(page.getByTestId('points-total')).toHaveText('28');
   });
 
-  test('cancelling a search and starting again', async ({ page }) => {
+  test('canceling a search and starting again', async ({ page }) => {
     await openExplorer(page);
     await setCurve(page, '199999', '2', '3');
     await page.getByRole('button', { name: 'Find all points' }).click();
