@@ -265,7 +265,7 @@ export function PointsPlot({ list, highlights, onPick }: PointsPlotProps) {
     }
 
     // Selected points: a ring and a letter.
-    context.font = '600 12px "Inter Variable", system-ui, sans-serif';
+    context.font = '600 12px "Instrument Sans Variable", system-ui, sans-serif';
     for (const highlight of highlights) {
       if (highlight.point === null) continue;
       const x = Number(highlight.point.x);

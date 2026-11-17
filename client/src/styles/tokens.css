@@ -4,6 +4,11 @@
  * bottom of this file (for example `bg-surface` or `text-muted`), which point at the
  * variables below. The dark theme only swaps the variable values, so every screen
  * follows automatically.
+ *
+ * The palette: a deep teal as the brand color (point P, buttons, links), one warm coral
+ * accent (point Q and the highlighted point in the brand art), plum for the result R,
+ * on a warm paper-white background. Every text color meets the WCAG AA contrast ratio
+ * (4.5 : 1) on the surfaces it is used on, in both themes.
  */
 
 /* ---------- Light theme (default) ---------- */
@@ -11,79 +16,89 @@
   color-scheme: light;
 
   /* Surfaces, from the page background up to raised cards */
-  --oc-bg: #f4f5fa;
+  --oc-bg: #f6f5f1;
   --oc-surface: #ffffff;
-  --oc-sunken: #eef0f7;
-  --oc-line: #dde1ec;
-  --oc-line-strong: #b9c0d4;
+  --oc-sunken: #efede7;
+  --oc-line: #e2dfd6;
+  --oc-line-strong: #bdb8aa;
 
   /* Text */
-  --oc-ink: #131a2b;
-  --oc-ink-soft: #3b4560;
-  --oc-muted: #586179;
+  --oc-ink: #14201f;
+  --oc-ink-soft: #35433f;
+  --oc-muted: #5a6560;
 
   /* Brand color, used for the main action and for point P */
-  --oc-primary: #3848d6;
-  --oc-primary-hover: #2a37b4;
+  --oc-primary: #0b6e69;
+  --oc-primary-hover: #075753;
   --oc-primary-ink: #ffffff;
-  --oc-primary-soft: #e8ebff;
+  --oc-primary-soft: #ddefec;
+
+  /* The single accent: readable coral for text, and a bright coral for decoration only
+     (the dot in the logo, the highlighted point in the brand art). */
+  --oc-accent: #ad4418;
+  --oc-accent-soft: #fbe8dc;
+  --oc-accent-bright: #f08a4b;
 
   /* The three roles a point can play in a calculation */
-  --oc-point-p: #3848d6;
-  --oc-point-p-soft: #e8ebff;
-  --oc-point-q: #a84a06;
-  --oc-point-q-soft: #fdefdc;
-  --oc-point-r: #04724f;
-  --oc-point-r-soft: #dff5ea;
+  --oc-point-p: #0b6e69;
+  --oc-point-p-soft: #ddefec;
+  --oc-point-q: #ad4418;
+  --oc-point-q-soft: #fbe8dc;
+  --oc-point-r: #7a3b9a;
+  --oc-point-r-soft: #f1e6f7;
 
   /* Feedback */
-  --oc-success: #04724f;
-  --oc-success-soft: #dff5ea;
+  --oc-success: #2e7520;
+  --oc-success-soft: #e6f2df;
   --oc-danger: #b91c25;
-  --oc-danger-soft: #fdeaea;
-  --oc-warning: #8a4a05;
-  --oc-warning-soft: #fdf1d8;
+  --oc-danger-soft: #fbe9e9;
+  --oc-warning: #855800;
+  --oc-warning-soft: #fbf0d6;
 
   /* Dims the page behind dialogs and the guided tour. Always dark, in both themes. */
-  --oc-scrim: rgb(11 15 26 / 0.55);
+  --oc-scrim: rgb(8 20 19 / 0.55);
 
   /* Depth */
-  --oc-shadow-card: 0 1px 2px rgb(19 26 43 / 0.05), 0 6px 20px rgb(19 26 43 / 0.06);
-  --oc-shadow-pop: 0 4px 12px rgb(19 26 43 / 0.1), 0 16px 40px rgb(19 26 43 / 0.12);
+  --oc-shadow-card: 0 1px 2px rgb(20 32 31 / 0.05), 0 6px 20px rgb(20 32 31 / 0.06);
+  --oc-shadow-pop: 0 4px 12px rgb(20 32 31 / 0.1), 0 16px 40px rgb(20 32 31 / 0.12);
 }
 
 /* ---------- Dark theme ---------- */
 :root[data-theme='dark'] {
   color-scheme: dark;
 
-  --oc-bg: #0b0f1a;
-  --oc-surface: #131929;
-  --oc-sunken: #0f1422;
-  --oc-line: #27304a;
-  --oc-line-strong: #46527a;
+  --oc-bg: #0c1413;
+  --oc-surface: #131e1d;
+  --oc-sunken: #0f1817;
+  --oc-line: #233533;
+  --oc-line-strong: #3f5a56;
 
-  --oc-ink: #e9ecf5;
-  --oc-ink-soft: #c5cbdd;
-  --oc-muted: #9ca6bf;
+  --oc-ink: #e8efed;
+  --oc-ink-soft: #c3d0cc;
+  --oc-muted: #95a6a1;
 
-  --oc-primary: #8c99ff;
-  --oc-primary-hover: #a8b2ff;
-  --oc-primary-ink: #0b0f1a;
-  --oc-primary-soft: #1d2449;
+  --oc-primary: #5cc8bf;
+  --oc-primary-hover: #82d8d0;
+  --oc-primary-ink: #0c1413;
+  --oc-primary-soft: #133533;
 
-  --oc-point-p: #8c99ff;
-  --oc-point-p-soft: #1d2449;
-  --oc-point-q: #f3b25a;
-  --oc-point-q-soft: #33240c;
-  --oc-point-r: #4fd89c;
-  --oc-point-r-soft: #0e2b20;
+  --oc-accent: #f2935c;
+  --oc-accent-soft: #3a2214;
+  --oc-accent-bright: #f2935c;
 
-  --oc-success: #4fd89c;
-  --oc-success-soft: #0e2b20;
+  --oc-point-p: #5cc8bf;
+  --oc-point-p-soft: #133533;
+  --oc-point-q: #f2935c;
+  --oc-point-q-soft: #3a2214;
+  --oc-point-r: #c79be3;
+  --oc-point-r-soft: #2c1d38;
+
+  --oc-success: #8fd46f;
+  --oc-success-soft: #182c12;
   --oc-danger: #ff8f8f;
   --oc-danger-soft: #3a1518;
-  --oc-warning: #f3c063;
-  --oc-warning-soft: #33270d;
+  --oc-warning: #e9c25a;
+  --oc-warning-soft: #33280d;
 
   --oc-scrim: rgb(0 0 0 / 0.68);
 
@@ -114,6 +129,10 @@
   --color-primary-ink: var(--oc-primary-ink);
   --color-primary-soft: var(--oc-primary-soft);
 
+  --color-accent: var(--oc-accent);
+  --color-accent-soft: var(--oc-accent-soft);
+  --color-accent-bright: var(--oc-accent-bright);
+
   --color-point-p: var(--oc-point-p);
   --color-point-p-soft: var(--oc-point-p-soft);
   --color-point-q: var(--oc-point-q);
@@ -135,8 +154,11 @@
 }
 
 @theme {
-  /* Fonts: both are bundled with the app, so nothing is fetched from another site. */
-  --font-sans: 'Inter Variable', ui-sans-serif, system-ui, 'Segoe UI', sans-serif;
+  /* Fonts: all three are bundled with the app, so nothing is fetched from another site.
+     Fraunces (a soft serif) gives page titles their own voice, Instrument Sans keeps
+     body text clean, and JetBrains Mono lines up the numbers in every calculation. */
+  --font-display: 'Fraunces Variable', ui-serif, Georgia, 'Times New Roman', serif;
+  --font-sans: 'Instrument Sans Variable', ui-sans-serif, system-ui, 'Segoe UI', sans-serif;
   --font-mono: 'JetBrains Mono Variable', ui-monospace, 'Cascadia Mono', Consolas, monospace;
 
   /* Small print (hints, notes, table numbers): 13px at the default text size. Every size

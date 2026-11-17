@@ -4,9 +4,11 @@
  */
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
-// Fonts are bundled with the app (no request to another site): Inter for text,
-// JetBrains Mono for numbers.
-import '@fontsource-variable/inter';
+// Fonts are bundled with the app (no request to another site): Fraunces for titles
+// (with its optical-size axis, so large and small titles are each drawn well),
+// Instrument Sans for text and JetBrains Mono for numbers.
+import '@fontsource-variable/fraunces/opsz.css';
+import '@fontsource-variable/instrument-sans';
 import '@fontsource-variable/jetbrains-mono';
 import './styles/index.css';
 import { App } from './App.tsx';

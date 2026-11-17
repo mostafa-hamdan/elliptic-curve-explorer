@@ -8,11 +8,13 @@
 /* Tell Tailwind where the components live so it generates the classes they use. */
 @source '../';
 
+/* "dark:" classes follow the theme chosen in the app (the data-theme attribute set by
+   theme-init.js and the settings), not only the operating system setting. */
+@custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
+
 @layer base {
   html {
     font-family: var(--font-sans);
-    /* Slightly tighter Inter letterforms, and the clearer "1", "l" and "0" shapes. */
-    font-feature-settings: 'cv05', 'cv08', 'zero';
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
   }
@@ -24,6 +26,14 @@
     color: var(--oc-ink);
     font-size: 0.9375rem;
     line-height: 1.55;
+  }
+
+  /* Page and section titles use the display serif; smaller headings stay in the body
+     font so dense panels remain easy to scan. */
+  h1,
+  h2 {
+    font-family: var(--font-display);
+    letter-spacing: -0.01em;
   }
 
   /* Numbers line up in columns and never use ligatures (">=" must stay two characters). */
