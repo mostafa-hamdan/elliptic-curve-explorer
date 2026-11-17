@@ -1,6 +1,7 @@
 /**
  * The root component: sets up the display preferences, the sign-in state, the shared
- * Explorer state, the app-wide pop-ups, the guided tour and the page routes. The Explorer
+ * Explorer state, the app-wide pop-ups, the guided tour and the page routes. The site
+ * opens on the landing page; the Explorer itself is at /explorer. The Explorer
  * state sits above the routes on purpose, so visiting another page and coming back does
  * not lose any work.
  */
@@ -17,7 +18,9 @@ import { SignInPage } from './pages/auth/SignInPage.tsx';
 import { SignUpPage } from './pages/auth/SignUpPage.tsx';
 import { ExplorerPage } from './pages/ExplorerPage.tsx';
 import { HelpPage } from './pages/HelpPage.tsx';
+import { LandingPage } from './pages/LandingPage.tsx';
 import { LearnPage } from './pages/LearnPage.tsx';
+import { LearnTopicPage } from './pages/LearnTopicPage.tsx';
 import { LimitationsPage } from './pages/LimitationsPage.tsx';
 import { NotFoundPage } from './pages/NotFoundPage.tsx';
 import { PracticePage } from './pages/PracticePage.tsx';
@@ -35,8 +38,10 @@ export function App() {
               <BrowserRouter>
                 <Routes>
                   <Route element={<AppShell />}>
-                    <Route index element={<ExplorerPage />} />
+                    <Route index element={<LandingPage />} />
+                    <Route path="explorer" element={<ExplorerPage />} />
                     <Route path="learn" element={<LearnPage />} />
+                    <Route path="learn/:topic" element={<LearnTopicPage />} />
                     <Route path="practice" element={<PracticePage />} />
                     <Route path="help" element={<HelpPage />} />
                     <Route path="report" element={<ReportPage />} />

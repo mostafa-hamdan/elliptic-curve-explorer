@@ -98,7 +98,7 @@ test.describe('keyboard shortcuts', () => {
   test('a tab shortcut on another page returns to the Explorer', async ({ page }) => {
     await page.goto('/limitations');
     await page.keyboard.press('3');
-    await expect(page).toHaveURL(/\/$/);
+    await expect(page).toHaveURL(/\/explorer$/);
     await expect(page.getByRole('tab', { name: 'Multiply' })).toHaveAttribute(
       'aria-selected',
       'true',
@@ -133,7 +133,12 @@ test.describe('reset and clear', () => {
 test.describe('guided tour', () => {
   test('starts by itself on a first visit and can be skipped for good', async ({ page }) => {
     await page.addInitScript(() => window.localStorage.removeItem('oncurve.tourDone'));
+    // Never on the landing page: the tour waits until the Explorer itself is opened.
     await page.goto('/');
+    await expect(page.getByTestId('landing')).toBeVisible();
+    await page.waitForTimeout(800);
+    await expect(page.getByTestId('tour')).toHaveCount(0);
+    await page.getByRole('link', { name: 'Open the explorer' }).first().click();
     const card = page.getByTestId('tour-card');
     await expect(card).toBeVisible();
     await expect(card).toContainText('Welcome to OnCurve');
@@ -146,7 +151,7 @@ test.describe('guided tour', () => {
     await page.goto('/help');
     await page.getByRole('button', { name: 'Take the guided tour' }).click();
     // The tour runs on the Explorer page.
-    await expect(page).toHaveURL(/\/$/);
+    await expect(page).toHaveURL(/\/explorer$/);
     const card = page.getByTestId('tour-card');
     await expect(card).toContainText('Step 1 of');
     const total = Number((await card.textContent())?.match(/of (\d+)/)?.[1]);

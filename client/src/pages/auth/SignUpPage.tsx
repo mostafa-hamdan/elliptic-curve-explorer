@@ -8,6 +8,8 @@ import type { PasswordCheck } from '@shared/passwordRules.ts';
 import { Button } from '../../components/ui/Button.tsx';
 import { Callout } from '../../components/ui/Callout.tsx';
 import { InputField } from '../../components/ui/InputField.tsx';
+import { PendingSaveHint } from '../../features/account/AccountNotices.tsx';
+import { pathAfterSignIn, readPendingSave } from '../../features/account/pendingSave.ts';
 import { useAuth } from '../../features/auth/AuthContext.tsx';
 import { PasswordMeter } from '../../features/auth/PasswordMeter.tsx';
 import { RecoveryCodes } from '../../features/auth/RecoveryCodes.tsx';
@@ -58,6 +60,7 @@ export function SignUpPage() {
   }
 
   if (codes) {
+    const pendingSave = readPendingSave();
     return (
       <AuthLayout
         title="Your account is ready"
@@ -78,9 +81,9 @@ export function SignUpPage() {
             variant="primary"
             disabled={!saved}
             className="w-full"
-            onClick={() => navigate('/account')}
+            onClick={() => navigate(pathAfterSignIn('/account'))}
           >
-            Continue to my account
+            {pendingSave ? `Continue and save your ${pendingSave.kind}` : 'Continue to my account'}
           </Button>
         </div>
       </AuthLayout>
@@ -100,6 +103,7 @@ export function SignUpPage() {
         </p>
       }
     >
+      <PendingSaveHint action="create your account" />
       <form onSubmit={handleSubmit} noValidate className="space-y-4" data-testid="signup-form">
         <InputField
           label="Email"

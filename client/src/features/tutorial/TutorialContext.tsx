@@ -1,8 +1,9 @@
 /**
  * State of the guided tour: whether it is running and which step is showing. The tour
- * starts by itself on a first visit and can be replayed from the settings or the Help page.
+ * starts by itself on the first visit to the Explorer (see TourOverlay) and can be
+ * replayed from the settings or the Help page.
  */
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { createContext, useCallback, useContext, useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
 import { announceProgress } from '../../lib/progress.ts';
 
@@ -25,7 +26,7 @@ interface TutorialContextValue {
 const TutorialContext = createContext<TutorialContextValue | null>(null);
 
 /** Has this browser already seen the tour? Errors (blocked storage) count as "seen". */
-function tourAlreadySeen(): boolean {
+export function tourAlreadySeen(): boolean {
   try {
     return window.localStorage.getItem(TOUR_DONE_KEY) === '1';
   } catch {
@@ -38,13 +39,6 @@ function tourAlreadySeen(): boolean {
 export function TutorialProvider({ children }: { children: ReactNode }) {
   const [active, setActive] = useState(false);
   const [stepIndex, setStepIndex] = useState(0);
-
-  // First visit: start the tour after the page has drawn, so the parts it points at exist.
-  useEffect(() => {
-    if (tourAlreadySeen()) return;
-    const timer = window.setTimeout(() => setActive(true), 400);
-    return () => window.clearTimeout(timer);
-  }, []);
 
   const start = useCallback(() => {
     setStepIndex(0);

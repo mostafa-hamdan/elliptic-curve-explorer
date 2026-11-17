@@ -10,6 +10,7 @@ import { Card, CardHeader } from '../../components/ui/Card.tsx';
 import { tryParseInteger } from '@shared/ecc/index.ts';
 import { api, errorMessage } from '../../lib/api.ts';
 import { cx } from '../../lib/cx.ts';
+import { EXPLORER_PATH } from '../../lib/paths.ts';
 import { count, shortNumber } from '../../lib/format.ts';
 import { useExplorer } from '../explorer/ExplorerContext.tsx';
 import { loadHistory, loadSaved, type HistoryInput, type SavedData } from './loadIntoExplorer.ts';
@@ -179,7 +180,7 @@ export function MyWork() {
                 size="sm"
                 onClick={() => {
                   loadSaved(explorer, item.data);
-                  navigate('/');
+                  navigate(EXPLORER_PATH);
                 }}
               >
                 Load
@@ -259,7 +260,7 @@ export function MyWork() {
                 size="sm"
                 onClick={() => {
                   loadHistory(explorer, item.operation, item.input);
-                  navigate('/');
+                  navigate(EXPLORER_PATH);
                 }}
               >
                 Open

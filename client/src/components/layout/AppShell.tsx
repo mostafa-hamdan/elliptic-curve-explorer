@@ -6,6 +6,8 @@
 import { useEffect } from 'react';
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router';
 import { cx } from '../../lib/cx.ts';
+import { EXPLORER_PATH, HOME_PATH, ISSUES_URL } from '../../lib/paths.ts';
+import { AccountNotices } from '../../features/account/AccountNotices.tsx';
 import { AssistantPanel } from '../../features/assistant/AssistantPanel.tsx';
 import { useAuth } from '../../features/auth/AuthContext.tsx';
 import { useExplorer } from '../../features/explorer/ExplorerContext.tsx';
@@ -21,7 +23,7 @@ import { Logo } from './Logo.tsx';
 
 /** Pages listed in the top bar, in order. */
 export const NAV_ITEMS: ReadonlyArray<{ to: string; label: string }> = [
-  { to: '/', label: 'Explorer' },
+  { to: EXPLORER_PATH, label: 'Explorer' },
   { to: '/learn', label: 'Learn' },
   { to: '/practice', label: 'Practice' },
   { to: '/help', label: 'Help' },
@@ -85,7 +87,7 @@ function useGlobalShortcuts(): void {
       event.preventDefault();
 
       const goExplorer = () => {
-        if (location.pathname !== '/') navigate('/');
+        if (location.pathname !== EXPLORER_PATH) navigate(EXPLORER_PATH);
       };
       switch (action) {
         case 'tab-points':
@@ -165,6 +167,7 @@ function AccountButton() {
 export function AppShell() {
   const { theme, toggleTheme } = usePreferences();
   const { openPanel } = useShell();
+  const isLanding = useLocation().pathname === HOME_PATH;
   useGlobalShortcuts();
 
   const nextTheme = theme === 'dark' ? 'light' : 'dark';
@@ -182,13 +185,13 @@ export function AppShell() {
       <header className="sticky top-0 z-30 border-b border-line bg-surface/90 backdrop-blur print:hidden">
         <div className="mx-auto flex h-14 w-full max-w-[1480px] items-center gap-3 px-4 sm:gap-6 sm:px-6">
           <NavLink
-            to="/"
+            to={HOME_PATH}
             className="flex shrink-0 items-center gap-2.5 rounded-lg"
             title="OnCurve home"
           >
             <Logo size={30} />
             <span className="hidden items-baseline gap-2 sm:flex">
-              <span className="text-[1.0625rem] font-semibold tracking-tight text-ink">
+              <span className="font-display text-[1.1875rem] font-semibold tracking-tight text-ink">
                 OnCurve
               </span>
               <span className="hidden text-note text-muted 2xl:inline">
@@ -206,7 +209,6 @@ export function AppShell() {
               <NavLink
                 key={item.to}
                 to={item.to}
-                end={item.to === '/'}
                 className={({ isActive }) =>
                   cx(
                     'shrink-0 rounded-lg px-3 py-1.5 text-sm font-medium whitespace-nowrap transition-colors',
@@ -245,7 +247,16 @@ export function AppShell() {
         </div>
       </header>
 
-      <main id="main" className="mx-auto w-full max-w-[1480px] flex-1 px-4 py-6 sm:px-6">
+      <AccountNotices />
+
+      {/* The landing page draws its own full-width bands; every other page sits in the
+          usual centered column. */}
+      <main
+        id="main"
+        className={
+          isLanding ? 'w-full flex-1' : 'mx-auto w-full max-w-[1480px] flex-1 px-4 py-6 sm:px-6'
+        }
+      >
         <Outlet />
       </main>
 
@@ -266,6 +277,14 @@ export function AppShell() {
             <NavLink to="/limitations" className="font-medium text-primary hover:underline">
               What this app cannot do
             </NavLink>
+            <a
+              href={ISSUES_URL}
+              target="_blank"
+              rel="noreferrer"
+              className="font-medium text-primary hover:underline"
+            >
+              Report a problem<span className="sr-only"> (opens GitHub in a new tab)</span>
+            </a>
           </div>
         </div>
       </footer>

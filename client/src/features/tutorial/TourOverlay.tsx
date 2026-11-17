@@ -7,9 +7,10 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react
 import { createPortal } from 'react-dom';
 import { useLocation, useNavigate } from 'react-router';
 import { Button } from '../../components/ui/Button.tsx';
+import { EXPLORER_PATH } from '../../lib/paths.ts';
 import { useExplorer } from '../explorer/ExplorerContext.tsx';
 import { TOUR_STEPS } from './steps.ts';
-import { useTutorial } from './TutorialContext.tsx';
+import { tourAlreadySeen, useTutorial } from './TutorialContext.tsx';
 
 /** Space between the highlighted part and the spotlight edge, in pixels. */
 const SPOTLIGHT_PADDING = 6;
@@ -57,7 +58,7 @@ function placeCard(
 
 /** The tour overlay. Renders nothing while the tour is not running. */
 export function TourOverlay() {
-  const { active, stepIndex, goTo, finish } = useTutorial();
+  const { active, stepIndex, goTo, finish, start } = useTutorial();
   const { setTab } = useExplorer();
   const navigate = useNavigate();
   const location = useLocation();
@@ -81,14 +82,22 @@ export function TourOverlay() {
     if (stepIndex > 0) goTo(stepIndex - 1);
   }, [goTo, stepIndex]);
 
+  // First visit to the Explorer: start the tour once the page has drawn, so the parts it
+  // points at exist. It never starts on the landing page or any other page.
+  useEffect(() => {
+    if (active || location.pathname !== EXPLORER_PATH || tourAlreadySeen()) return;
+    const timer = window.setTimeout(start, 400);
+    return () => window.clearTimeout(timer);
+  }, [active, location.pathname, start]);
+
   // The tour describes the Explorer page, so it always runs there.
   useEffect(() => {
-    if (active && location.pathname !== '/') navigate('/');
+    if (active && location.pathname !== EXPLORER_PATH) navigate(EXPLORER_PATH);
   }, [active, location.pathname, navigate]);
 
   // For each step: show its tab, find its target, scroll it into view, then measure it.
   useEffect(() => {
-    if (!active || !step || location.pathname !== '/') return;
+    if (!active || !step || location.pathname !== EXPLORER_PATH) return;
     setReady(false);
     if (step.tab) setTab(step.tab);
 

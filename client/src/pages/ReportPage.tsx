@@ -12,6 +12,7 @@ import { AdditionSteps } from '../features/add/AdditionSteps.tsx';
 import { useExplorer } from '../features/explorer/ExplorerContext.tsx';
 import { multiplySummary } from '../features/multiply/summary.ts';
 import { count, equationText, grouped, plain, pointText } from '../lib/format.ts';
+import { EXPLORER_PATH } from '../lib/paths.ts';
 import { usePageTitle } from '../lib/usePageTitle.ts';
 
 /** Above this many points the report lists only the count, not every point. */
@@ -86,7 +87,7 @@ export function ReportPage() {
         </div>
         <div className="flex gap-2 print:hidden">
           <Link
-            to="/"
+            to={EXPLORER_PATH}
             className="inline-flex h-10 items-center rounded-lg border border-line-strong bg-surface px-4 text-sm font-medium text-ink hover:bg-sunken"
           >
             Back to the Explorer
@@ -129,7 +130,7 @@ export function ReportPage() {
       {nothing && curve && (
         <Callout tone="info" title="Nothing calculated yet" data-testid="report-empty">
           Find the points, add two points or multiply a point on the{' '}
-          <Link to="/" className="font-medium text-primary hover:underline">
+          <Link to={EXPLORER_PATH} className="font-medium text-primary hover:underline">
             Explorer page
           </Link>
           ; the results then appear here, ready to print.

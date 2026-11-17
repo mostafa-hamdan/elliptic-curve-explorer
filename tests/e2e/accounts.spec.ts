@@ -51,7 +51,7 @@ test.describe('accounts', () => {
   }) => {
     const email = newEmail('signup');
     await page.goto('/');
-    await page.getByRole('link', { name: 'Sign in' }).click();
+    await page.getByRole('link', { name: 'Sign in / Create account' }).click();
     await page.getByRole('link', { name: 'Create an account' }).click();
 
     // The meter refuses a weak password and the form explains why.
@@ -82,7 +82,7 @@ test.describe('accounts', () => {
     await expect(page.getByTestId('account-button')).toBeVisible();
 
     await page.getByRole('button', { name: 'Sign out', exact: true }).click();
-    await expect(page.getByRole('link', { name: 'Sign in' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Sign in', exact: true })).toBeVisible();
 
     await signIn(page, email);
     await expect(page.getByTestId('account-email')).toContainText(email);
@@ -182,7 +182,7 @@ test.describe('accounts', () => {
     await expect(history.locator('li').nth(1)).toContainText('(17, 20)');
 
     // Change the curve, then load the addition back from the history.
-    await page.goto('/');
+    await page.goto('/explorer');
     await page.getByLabel('Example curves').selectOption({ label: 'E17(2, 2)' });
     await page.getByTestId('account-button').click();
     await history.locator('li').nth(1).getByRole('button', { name: 'Open' }).click();
@@ -202,11 +202,7 @@ test.describe('accounts', () => {
     await expect(history).toContainText('Every calculation you make while signed in appears here.');
   });
 
-  test('guests see no save buttons and are sent to sign in from the account page', async ({
-    page,
-  }) => {
-    await openExplorer(page);
-    await expect(page.getByRole('button', { name: 'Save curve' })).toHaveCount(0);
+  test('guests are sent to sign in from the account page', async ({ page }) => {
     await page.goto('/account');
     await expect(page).toHaveURL(/\/signin$/);
   });
@@ -235,8 +231,9 @@ test.describe('accounts', () => {
       .getByLabel('I understand that everything in this account will be deleted for good.')
       .check();
     await remove.getByRole('button', { name: 'Delete my account' }).click();
+    // Back on the landing page, as a guest.
     await expect(page).toHaveURL(/\/$/);
-    await expect(page.getByRole('link', { name: 'Sign in' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Sign in / Create account' })).toBeVisible();
 
     await signIn(page, email, 'Another-strong-secret-55');
     await expect(page.getByTestId('signin-error')).toHaveText('Wrong email or password.');

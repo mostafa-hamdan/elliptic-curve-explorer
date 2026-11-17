@@ -68,9 +68,17 @@ test.describe('hostile input', () => {
     const cancel = page.getByRole('button', { name: 'Cancel' });
     if (await cancel.isVisible()) {
       await cancel.click();
-      await expect(page.getByTestId('points-idle')).toBeVisible();
+      // The search takes about a second, so it can finish in the moment between seeing
+      // Cancel and the click arriving. Either way the screen must settle in a clean state:
+      // the idle message after a cancel, or the complete result, never a half-done one.
+      await expect(
+        page.getByTestId('points-idle').or(page.getByTestId('points-result')),
+      ).toBeVisible();
+      await expect(page.getByTestId('points-running')).toHaveCount(0);
     }
-    await findAllPoints(page);
+    // Start again: the button reads "Find again" when the first search did finish.
+    await page.getByRole('button', { name: /^(Find all points|Find again)$/ }).click();
+    await expect(page.getByTestId('points-result')).toBeVisible({ timeout: 20_000 });
     await expect(page.getByText('N is inside the bound')).toBeVisible();
   });
 

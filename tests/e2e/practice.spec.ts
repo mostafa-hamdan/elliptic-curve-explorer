@@ -118,7 +118,7 @@ test.describe('practice mode', () => {
     const prompt = (await page.getByTestId('practice-prompt').textContent()) ?? '';
     const [, p, , , x1, y1] = prompt.match(/E(\d+)\((\d+), (\d+)\), add P = \((\d+), (\d+)\)/)!;
     await page.getByRole('button', { name: 'Open in the Explorer' }).click();
-    await expect(page).toHaveURL(/\/$/);
+    await expect(page).toHaveURL(/\/explorer$/);
     await expect(page.getByRole('tab', { name: 'Add points' })).toHaveAttribute(
       'aria-selected',
       'true',

@@ -12,6 +12,7 @@ import { ChoiceGroup } from '../components/ui/ChoiceGroup.tsx';
 import { Icon } from '../components/ui/Icon.tsx';
 import { SelectField } from '../components/ui/SelectField.tsx';
 import { cx } from '../lib/cx.ts';
+import { EXPLORER_PATH } from '../lib/paths.ts';
 import { count, equationText } from '../lib/format.ts';
 import { usePageTitle } from '../lib/usePageTitle.ts';
 import { useExplorer } from '../features/explorer/ExplorerContext.tsx';
@@ -213,7 +214,7 @@ export function PracticePage() {
     }
     if (target.k !== undefined) explorer.setScalar(target.k.toString());
     explorer.setTab(target.tab);
-    navigate('/');
+    navigate(EXPLORER_PATH);
   }
 
   const equation = exercise.curve ? equationText(exercise.curve) : null;

@@ -45,7 +45,7 @@ export { expect };
 
 /** Open the Explorer page and wait until it is ready. */
 export async function openExplorer(page: Page): Promise<void> {
-  await page.goto('/');
+  await page.goto('/explorer');
   await expect(
     page.getByRole('heading', { level: 1, name: 'Elliptic Curve Explorer' }),
   ).toBeVisible();

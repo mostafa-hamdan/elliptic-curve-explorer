@@ -7,6 +7,8 @@ import { Link, useNavigate } from 'react-router';
 import { Button } from '../../components/ui/Button.tsx';
 import { Callout } from '../../components/ui/Callout.tsx';
 import { InputField } from '../../components/ui/InputField.tsx';
+import { PendingSaveHint } from '../../features/account/AccountNotices.tsx';
+import { pathAfterSignIn } from '../../features/account/pendingSave.ts';
 import { useAuth } from '../../features/auth/AuthContext.tsx';
 import { errorMessage } from '../../lib/api.ts';
 import { usePageTitle } from '../../lib/usePageTitle.ts';
@@ -41,7 +43,8 @@ export function SignInPage() {
       if (outcome === 'second-factor') {
         setNeedsCode(true);
       } else {
-        navigate('/account');
+        // A guest who clicked Save goes back to that screen, where the save is finished.
+        navigate(pathAfterSignIn('/account'));
       }
     } catch (caught) {
       setError(errorMessage(caught));
@@ -83,6 +86,7 @@ export function SignInPage() {
         </>
       }
     >
+      <PendingSaveHint action="sign in" />
       <form onSubmit={handleSubmit} noValidate className="space-y-4" data-testid="signin-form">
         <InputField
           label="Email"

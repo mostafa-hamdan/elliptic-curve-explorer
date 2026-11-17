@@ -9,8 +9,10 @@ import { Link } from 'react-router';
 import { createCurve, multiply, type AffinePoint } from '@shared/ecc/index.ts';
 import { Card } from '../components/ui/Card.tsx';
 import { ModLinePlot } from '../features/learn/ModLinePlot.tsx';
+import { LEARN_TOPICS } from '../features/learn/topics.tsx';
 import { RealCurvePlot } from '../features/learn/RealCurvePlot.tsx';
 import { pointText } from '../lib/format.ts';
+import { EXPLORER_PATH } from '../lib/paths.ts';
 import { usePageTitle } from '../lib/usePageTitle.ts';
 
 /** The small key-exchange example: E17(2, 2) with base point G = (5, 1). */
@@ -66,6 +68,18 @@ export function LearnPage() {
           Elliptic curves in five short steps. Each picture is live: move the sliders and choose
           points to see the rules at work.
         </p>
+        <nav aria-label="Short reads" className="mt-3 flex flex-wrap gap-2">
+          <span className="text-sm text-muted">Short reads:</span>
+          {LEARN_TOPICS.map((topic) => (
+            <Link
+              key={topic.slug}
+              to={`/learn/${topic.slug}`}
+              className="rounded-full border border-line bg-surface px-3 py-0.5 text-sm font-medium text-primary hover:border-primary/50"
+            >
+              {topic.title}
+            </Link>
+          ))}
+        </nav>
       </div>
 
       <Section
@@ -222,7 +236,7 @@ export function LearnPage() {
           Both get abG, the same point, while someone listening only sees G, A and B. On this tiny
           curve the listener could simply try every k up to 19; on secp256k1 there are about 10⁷⁷ to
           try. Check these numbers yourself in the{' '}
-          <Link to="/" className="font-medium text-primary hover:underline">
+          <Link to={EXPLORER_PATH} className="font-medium text-primary hover:underline">
             Explorer
           </Link>
           .

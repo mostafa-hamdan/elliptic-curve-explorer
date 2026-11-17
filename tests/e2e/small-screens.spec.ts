@@ -48,6 +48,15 @@ const SCREENS: Array<{ name: string; open: (page: Page) => Promise<void> }> = [
       await page.getByRole('button', { name: 'Show the working for step 2', exact: true }).click();
     },
   },
+  { name: 'landing', open: async (page) => void (await page.goto('/')) },
+  {
+    name: 'topic-addition',
+    open: async (page) => void (await page.goto('/learn/point-addition')),
+  },
+  {
+    name: 'topic-real-life',
+    open: async (page) => void (await page.goto('/learn/ecc-in-real-life')),
+  },
   { name: 'learn', open: async (page) => void (await page.goto('/learn')) },
   { name: 'practice', open: async (page) => void (await page.goto('/practice')) },
   { name: 'help', open: async (page) => void (await page.goto('/help')) },

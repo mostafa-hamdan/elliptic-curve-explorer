@@ -26,8 +26,59 @@ const VIEWPORTS = [
 
 const THEMES = ['light', 'dark'] as const;
 
+/** The "Learn ECC" topic pages. */
+const LEARN_TOPIC_SLUGS = [
+  'elliptic-curves',
+  'point-addition',
+  'scalar-multiplication',
+  'ecc-in-real-life',
+] as const;
+
+/**
+ * Scroll through the page so pictures that load only when seen are loaded, then wait for
+ * every visible picture to finish, so full-page screenshots have no empty frames.
+ */
+async function loadAllImages(page: Page): Promise<void> {
+  await page.evaluate(async () => {
+    for (let y = 0; y < document.body.scrollHeight; y += window.innerHeight / 2) {
+      window.scrollTo(0, y);
+      await new Promise((resolve) => setTimeout(resolve, 60));
+    }
+    window.scrollTo(0, 0);
+  });
+  await page.waitForFunction(() =>
+    Array.from(document.images)
+      .filter((image) => image.offsetParent !== null)
+      .every((image) => image.complete && image.naturalWidth > 0),
+  );
+}
+
 /** The screens of the app, each with the steps that bring it into a filled-in state. */
 const SCREENS: Array<{ name: string; open: (page: Page) => Promise<void> }> = [
+  {
+    name: 'landing',
+    open: async (page) => {
+      await page.goto('/');
+      await expect(page.getByTestId('landing')).toBeVisible();
+      await loadAllImages(page);
+    },
+  },
+  ...LEARN_TOPIC_SLUGS.map((slug) => ({
+    name: `topic-${slug}`,
+    open: async (page: Page) => {
+      await page.goto(`/learn/${slug}`);
+      await expect(page.getByTestId('learn-topic')).toBeVisible();
+    },
+  })),
+  {
+    name: 'guest-save',
+    open: async (page) => {
+      await openExplorer(page);
+      await expect(page.getByTestId('guest-banner')).toBeVisible();
+      await page.getByRole('button', { name: 'Save curve' }).click();
+      await expect(page.getByTestId('guest-save-dialog')).toBeVisible();
+    },
+  },
   {
     name: 'explorer-start',
     open: async (page) => {

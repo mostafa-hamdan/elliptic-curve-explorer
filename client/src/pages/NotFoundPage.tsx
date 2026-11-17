@@ -3,6 +3,7 @@
  */
 import { Link } from 'react-router';
 import { Card } from '../components/ui/Card.tsx';
+import { EXPLORER_PATH } from '../lib/paths.ts';
 import { usePageTitle } from '../lib/usePageTitle.ts';
 
 /** The "page not found" screen. */
@@ -16,7 +17,7 @@ export function NotFoundPage() {
         This address is not a point on our curve. The Explorer is the place to start.
       </p>
       <Link
-        to="/"
+        to={EXPLORER_PATH}
         className="mt-5 inline-flex h-10 items-center rounded-lg bg-primary px-4 text-sm font-medium text-primary-ink transition-colors hover:bg-primary-hover"
       >
         Go to the Explorer
