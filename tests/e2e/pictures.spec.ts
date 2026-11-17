@@ -129,6 +129,33 @@ test.describe('multiples animation', () => {
     await expect(dialog).toBeHidden();
   });
 
+  test('steps back and forth, jumps from the list, and labels the dots', async ({ page }) => {
+    await openExplorer(page);
+    await choosePreset(page, 'E17(2, 2)');
+    await openTab(page, 'Multiply');
+    await page.getByRole('button', { name: 'Animate multiples of P' }).click();
+    const dialog = page.getByTestId('multiples-dialog');
+    await dialog.getByRole('button', { name: 'Pause' }).click();
+    await expect(dialog.getByRole('button', { name: 'Previous' })).toBeDisabled();
+
+    // The list holds every multiple up to O; choosing one jumps straight to it.
+    await expect(dialog.getByTestId('multiples-item')).toHaveCount(19);
+    await dialog.getByTestId('multiples-item').filter({ hasText: '5P = (9, 16)' }).click();
+    await expect(dialog.getByTestId('multiples-current')).toHaveText('5P = (9, 16)');
+    await expect(dialog.getByTestId('multiples-label')).toHaveCount(5);
+    await expect(dialog.getByTestId('multiples-label').last()).toHaveText('5P');
+
+    await dialog.getByRole('button', { name: 'Previous' }).click();
+    await expect(dialog.getByTestId('multiples-current')).toHaveText('4P = (3, 1)');
+    await dialog.getByRole('button', { name: 'Next multiple' }).click();
+    await expect(dialog.getByTestId('multiples-current')).toHaveText('5P = (9, 16)');
+    await expect(dialog.getByText('they show the order of the walk')).toBeVisible();
+
+    // Jumping to the last line finishes the walk at O.
+    await dialog.getByTestId('multiples-item').last().click();
+    await expect(dialog.getByTestId('multiples-summary')).toContainText('order 19');
+  });
+
   test('a point of order 5 on E97(2, 3) and Lagrange’s theorem', async ({ page }) => {
     await openExplorer(page);
     await choosePreset(page, 'E97(2, 3)');

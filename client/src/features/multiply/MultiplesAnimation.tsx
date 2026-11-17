@@ -71,11 +71,22 @@ export function MultiplesAnimation({ curve, point }: MultiplesAnimationProps) {
     return () => window.clearTimeout(timer);
   }, [playing, finished, shown, speed]);
 
-  // Keep the newest multiple in view in the list.
+  // Keep the current multiple in view inside the list (without scrolling the page).
   useEffect(() => {
     const list = listRef.current;
-    if (list) list.scrollTop = list.scrollHeight;
+    const item = list?.querySelector<HTMLElement>('[aria-current="true"]');
+    if (!list || !item) return;
+    const top = item.offsetTop - list.offsetTop;
+    if (top < list.scrollTop || top + item.offsetHeight > list.scrollTop + list.clientHeight) {
+      list.scrollTop = Math.max(0, top - list.clientHeight / 2);
+    }
   }, [shown]);
+
+  /** Show one multiple and stop the animation there. */
+  function jumpTo(multiple: number) {
+    setPlaying(false);
+    setShown(Math.min(multiples.length, Math.max(1, multiple)));
+  }
 
   const current = multiples[shown - 1] ?? null;
   const trail = multiples
@@ -88,6 +99,9 @@ export function MultiplesAnimation({ curve, point }: MultiplesAnimationProps) {
     cy: p - Number(value.y) - 0.5,
   });
   const dot = Math.max(0.35, p / 90);
+  // Every dot gets its "kP" label while that stays readable; otherwise only the current one.
+  const labelAll = p <= 100 && trail.length <= 40;
+  const labelSize = Math.max(0.9, p / 26);
 
   return (
     <div className="space-y-4" data-testid="multiples">
@@ -107,14 +121,10 @@ export function MultiplesAnimation({ curve, point }: MultiplesAnimationProps) {
               Play
             </Button>
           )}
-          <Button
-            icon="skipForward"
-            disabled={finished}
-            onClick={() => {
-              setPlaying(false);
-              setShown((value) => value + 1);
-            }}
-          >
+          <Button icon="chevronLeft" disabled={shown <= 1} onClick={() => jumpTo(shown - 1)}>
+            Previous
+          </Button>
+          <Button icon="skipForward" disabled={finished} onClick={() => jumpTo(shown + 1)}>
             Next multiple
           </Button>
           <Button
@@ -142,43 +152,74 @@ export function MultiplesAnimation({ curve, point }: MultiplesAnimationProps) {
         </div>
       </div>
 
-      <div className={cx('grid gap-4', drawable && 'md:grid-cols-[minmax(0,1fr)_minmax(0,260px)]')}>
+      <div className={cx('grid gap-5', drawable && 'md:grid-cols-[auto_minmax(0,1fr)]')}>
         {drawable && (
-          <svg
-            viewBox={`0 0 ${p} ${p}`}
-            role="img"
-            aria-label={`Multiples of P on the plot of ${grouped(background.length + 1)} points`}
-            className="aspect-square w-full max-w-[min(460px,52vh)] rounded-lg border border-line bg-sunken"
-            data-testid="multiples-plot"
-          >
-            {background.map((value) => (
-              <circle
-                key={`${value.x},${value.y}`}
-                {...at(value)}
-                r={dot * 0.7}
-                className="fill-line-strong"
+          <figure className="m-0 min-w-0 md:w-[min(440px,50vh)]">
+            <svg
+              viewBox={`0 0 ${p} ${p}`}
+              role="img"
+              aria-label={`Multiples of P on the plot of ${grouped(background.length + 1)} points`}
+              className="aspect-square w-full rounded-lg border border-line bg-sunken"
+              data-testid="multiples-plot"
+            >
+              {background.map((value) => (
+                <circle
+                  key={`${value.x},${value.y}`}
+                  {...at(value)}
+                  r={dot * 0.7}
+                  className="fill-line-strong"
+                />
+              ))}
+              <polyline
+                points={trail.map((value) => `${at(value).cx},${at(value).cy}`).join(' ')}
+                fill="none"
+                className="stroke-primary"
+                strokeWidth={dot * 0.35}
+                strokeLinejoin="round"
+                opacity={0.55}
               />
-            ))}
-            <polyline
-              points={trail.map((value) => `${at(value).cx},${at(value).cy}`).join(' ')}
-              fill="none"
-              className="stroke-primary"
-              strokeWidth={dot * 0.35}
-              strokeLinejoin="round"
-              opacity={0.55}
-            />
-            {trail.map((value, index) => (
-              <circle key={index} {...at(value)} r={dot} className="fill-primary" />
-            ))}
-            {current !== null && (
-              <circle
-                {...at(current)}
-                r={dot * 2}
-                className="fill-none stroke-point-r"
-                strokeWidth={dot * 0.6}
-              />
-            )}
-          </svg>
+              {trail.map((value, index) => (
+                <circle key={index} {...at(value)} r={dot} className="fill-primary" />
+              ))}
+              {current !== null && (
+                <circle
+                  {...at(current)}
+                  r={dot * 2}
+                  className="fill-none stroke-point-r"
+                  strokeWidth={dot * 0.6}
+                />
+              )}
+              {multiples.slice(0, shown).map((value, index) => {
+                if (value === null) return null;
+                const isCurrent = index === shown - 1;
+                if (!labelAll && !isCurrent) return null;
+                const position = at(value);
+                // Labels near the right or top edge go on the other side of the dot.
+                const right = position.cx < p * 0.85;
+                return (
+                  <text
+                    key={`label-${index}`}
+                    x={position.cx + (right ? dot * 1.6 : -dot * 1.6)}
+                    y={
+                      position.cy - dot * 1.2 < labelSize
+                        ? position.cy + labelSize
+                        : position.cy - dot * 1.2
+                    }
+                    textAnchor={right ? 'start' : 'end'}
+                    fontSize={labelSize}
+                    className={isCurrent ? 'fill-point-r font-semibold' : 'fill-ink-soft'}
+                    data-testid="multiples-label"
+                  >
+                    {index + 1}P
+                  </text>
+                );
+              })}
+            </svg>
+            <figcaption className="mt-1.5 text-note text-muted">
+              The lines join each multiple to the next one, so they show the order of the walk P →
+              2P → 3P …; they are not lines on the curve.
+            </figcaption>
+          </figure>
         )}
 
         <div className="min-w-0 space-y-3">
@@ -223,20 +264,33 @@ export function MultiplesAnimation({ curve, point }: MultiplesAnimationProps) {
 
           <ol
             ref={listRef}
-            className="max-h-56 space-y-0.5 overflow-y-auto rounded-lg border border-line bg-surface p-2 font-mono text-note"
-            aria-label="Multiples computed so far"
+            className="relative max-h-64 space-y-0.5 overflow-y-auto rounded-lg border border-line bg-surface p-1.5 font-mono text-note"
+            aria-label="Multiples of P; choose one to jump to it"
           >
-            {multiples.slice(0, shown).map((value, index) => (
-              <li
-                key={index}
-                className={cx(
-                  'rounded px-2 py-0.5 wrap-anywhere',
-                  index === shown - 1 ? 'bg-primary-soft text-ink' : 'text-ink-soft',
-                )}
-              >
-                {index + 1}P = {pointText(value, true)}
-              </li>
-            ))}
+            {multiples.map((value, index) => {
+              const isCurrent = index === shown - 1;
+              const reached = index < shown;
+              return (
+                <li key={index}>
+                  <button
+                    type="button"
+                    aria-current={isCurrent ? 'true' : undefined}
+                    onClick={() => jumpTo(index + 1)}
+                    className={cx(
+                      'w-full cursor-pointer rounded px-2 py-0.5 text-left wrap-anywhere transition-colors',
+                      isCurrent
+                        ? 'bg-primary-soft font-semibold text-ink'
+                        : reached
+                          ? 'text-ink-soft hover:bg-sunken'
+                          : 'text-muted hover:bg-sunken hover:text-ink-soft',
+                    )}
+                    data-testid="multiples-item"
+                  >
+                    {index + 1}P = {pointText(value, true)}
+                  </button>
+                </li>
+              );
+            })}
           </ol>
         </div>
       </div>
