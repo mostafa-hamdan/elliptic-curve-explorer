@@ -99,7 +99,8 @@ function Working({ rows }: { rows: Array<[string, ReactNode]> }) {
 function TwoPictures() {
   // Upper and lower halves are separate strokes, so the open branch is not closed off by
   // a vertical line at the right edge.
-  const real = curvePieces(-1, 1, -2, 3, 300)
+  // The curve stops at x = 2.6, where y ≈ ±4, so it ends just inside the frame.
+  const real = curvePieces(-1, 1, -2, 2.6, 300)
     .flatMap((piece) => [piece.slice(0, piece.length / 2), piece.slice(piece.length / 2)])
     .map((piece) =>
       piece
