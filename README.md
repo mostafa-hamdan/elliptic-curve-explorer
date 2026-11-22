@@ -72,7 +72,8 @@ setup. An account is optional: every calculation works as a guest.
   multiplication by hand; the app checks each step and points to the first mistake.
 - **Assistant**: answers questions and explains your last result from the engine's own
   step data. It works offline; with a server key and a signed-in user it can use AI mode
-  (Claude Haiku 5.5), whose tools are backed by the same engine.
+  (OpenAI by default, or Anthropic, chosen in `.env`), whose tools are backed by the same
+  engine.
 - Guided **tour** on the first visit (replayable), **Help** page, keyboard shortcuts.
 
 **Comfort and export**
@@ -117,9 +118,30 @@ Stated openly, and also on the app's Limitations page:
 
 ## Turning on the assistant's AI mode (optional)
 
-Put a key in the file **`.env`** in the project folder, on the line
-**`ANTHROPIC_API_KEY=`**, then restart the app. The key stays on the server; never paste
-it anywhere else. Without a key the assistant uses its offline helper.
+The assistant works without any key, using its offline helper. To turn on AI mode, edit
+the file **`.env`** in the project folder and restart the app. Keys stay on the server;
+never paste one anywhere else.
+
+| Line in `.env`       | What it does                                                           |
+| -------------------- | ---------------------------------------------------------------------- |
+| `AI_PROVIDER=openai` | Who receives the questions: `openai` (the default) or `anthropic`.     |
+| `OPENAI_API_KEY=`    | Put your OpenAI key after the `=` when the provider is `openai`.       |
+| `OPENAI_MODEL=`      | The OpenAI model; the default is `gpt-5-mini`.                         |
+| `ANTHROPIC_API_KEY=` | Put your Anthropic key after the `=` when the provider is `anthropic`. |
+| `AI_DAILY_LIMIT=50`  | AI questions per UTC day across all users; `0` turns AI mode off.      |
+
+**Which provider receives the questions.** Only the one named by `AI_PROVIDER`, even when
+both keys are set. It receives the question, the last few messages of the chat, a short
+description of the current curve and points, and the results of the engine's tools; never
+an email address or a password. With OpenAI, requests ask it not to store the response
+(`store: false`). The assistant panel and the Security page show the provider in use.
+
+**Restricting an OpenAI key.** The app calls one endpoint only, the Responses API:
+`POST https://api.openai.com/v1/responses`, with function calling. It does not use Chat
+Completions. A restricted key needs access to Responses and nothing else.
+
+When the daily cap is reached, or OpenAI reports a rate limit, an exhausted budget or a
+model the key may not use, the offline helper takes over.
 
 ## Troubleshooting
 

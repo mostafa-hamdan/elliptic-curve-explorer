@@ -6,6 +6,11 @@ All changes a user can see are listed here, newest first.
 
 ### Added
 
+- The assistant's AI mode can use OpenAI (the new default) or Anthropic, chosen with
+  `AI_PROVIDER` in `.env`. The panel and the Security page say which one receives questions.
+- A daily cap on AI questions across all users (`AI_DAILY_LIMIT`, 50 by default). When it
+  is reached, everyone gets the offline helper with a short notice until midnight UTC.
+
 - A landing page at `/` with an animated chord-and-tangent picture, real screenshots of
   each feature, how it works, security, questions and answers, and an About section. The
   Explorer moved to `/explorer` and never asks for a sign-in.

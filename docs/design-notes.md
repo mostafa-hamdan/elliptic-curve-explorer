@@ -86,9 +86,21 @@ These are meant as raw material for the project report.
 - **Offline helper first.** It always works, needs no key, and explains results from the
   engine's own step data. AI mode is used only when the server has a key and the user is
   signed in; any failure falls back to the offline helper with a short notice.
-- **AI mode: Claude Haiku 5.5** (as the specification names), effort `low` for quick chat
-  answers, a manual tool loop with six engine-backed tools and strict schemas, at most six
-  rounds, 20 questions per user per hour, 500 characters per question.
+- **AI mode has two providers, chosen by `AI_PROVIDER`.** OpenAI is the default
+  (`gpt-5-mini`, minimal reasoning effort, the Responses API); Anthropic stays available
+  (Claude Haiku 5.5, effort `low`). Both use a manual tool loop with the same six
+  engine-backed tools and strict schemas, at most six rounds, 20 questions per user per
+  hour, 500 characters per question.
+- **The provider never changes by itself.** A missing key or a mistyped `AI_PROVIDER` turns
+  AI mode off, so questions cannot reach a company nobody chose.
+- **Responses API with `store: false`.** Each request carries the whole exchange, including
+  the reasoning items, so a hosted server keeps no state and OpenAI is asked to store none.
+- **A global daily cap puts a ceiling on the bill.** One database counter per UTC day. A
+  question is counted before the call, because a call that fails half way may still cost
+  money. A full day does not use up anyone's hourly allowance.
+- **Provider limits fall back quietly.** A rate limit, empty budget or disallowed model is
+  nothing a student can act on, so the offline helper answers with no warning, and the panel
+  header stops claiming AI mode.
 - **Answers are rendered without HTML** by a small markdown reader (paragraphs, lists,
   bold, code).
 
