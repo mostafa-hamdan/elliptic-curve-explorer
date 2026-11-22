@@ -4,14 +4,28 @@
  */
 import { optionalEnv } from './env.ts';
 
+/** The AI providers the assistant can use. */
+export type AiProviderName = 'openai' | 'anthropic';
+
+/** AI questions allowed per day when AI_DAILY_LIMIT is missing or invalid. */
+export const DEFAULT_AI_DAILY_LIMIT = 50;
+
 /** Everything the server needs to know about where and how it runs. */
 export interface ServerConfig {
   /** Secret used to hash session tokens and recovery codes and to encrypt 2FA secrets. */
   sessionSecret: string;
   /** True when running on a hosting platform over HTTPS: adds Secure cookies and HSTS. */
   hosted: boolean;
-  /** Key for the assistant's AI mode; undefined means the offline helper only. */
+  /** Who receives AI questions; null when AI_PROVIDER holds an unknown value (AI mode off). */
+  aiProvider: AiProviderName | null;
+  /** Key used when the provider is Anthropic; without it, the offline helper only. */
   anthropicApiKey: string | undefined;
+  /** Key used when the provider is OpenAI; without it, the offline helper only. */
+  openaiApiKey: string | undefined;
+  /** The OpenAI model. */
+  openaiModel: string;
+  /** AI questions allowed per UTC day across all users; 0 turns AI mode off. */
+  aiDailyLimit: number;
   /** New accounts allowed per network address per hour. */
   signupsPerHour: number;
   /** Sign-in attempts allowed per network address per 15 minutes. */
@@ -25,6 +39,29 @@ export interface ServerConfig {
 function numberSetting(name: string, fallback: number): number {
   const value = Number(optionalEnv(name));
   return Number.isInteger(value) && value > 0 ? value : fallback;
+}
+
+/**
+ * Read AI_PROVIDER. A typo must not send questions to a company nobody chose, so an unknown
+ * value turns AI mode off instead of picking one.
+ *
+ * @returns the provider ("openai" when the setting is empty), or null for an unknown value.
+ */
+function aiProviderSetting(): AiProviderName | null {
+  const value = optionalEnv('AI_PROVIDER')?.toLowerCase() ?? 'openai';
+  return value === 'openai' || value === 'anthropic' ? value : null;
+}
+
+/**
+ * Read AI_DAILY_LIMIT. Unlike the other limits, 0 is meaningful: no AI questions at all.
+ *
+ * @returns the limit, or the default when the setting is missing or not a whole number.
+ */
+function aiDailyLimitSetting(): number {
+  const text = optionalEnv('AI_DAILY_LIMIT');
+  if (text === undefined || !/^\d+$/.test(text)) return DEFAULT_AI_DAILY_LIMIT;
+  const value = Number(text);
+  return Number.isSafeInteger(value) ? value : DEFAULT_AI_DAILY_LIMIT;
 }
 
 /** Shortest acceptable session secret (32 characters of base64 is 192 bits). */
@@ -46,7 +83,11 @@ export function loadConfig(): ServerConfig {
   return {
     sessionSecret,
     hosted: optionalEnv('HOSTED') === '1',
+    aiProvider: aiProviderSetting(),
     anthropicApiKey: optionalEnv('ANTHROPIC_API_KEY'),
+    openaiApiKey: optionalEnv('OPENAI_API_KEY'),
+    openaiModel: optionalEnv('OPENAI_MODEL') ?? 'gpt-5-mini',
+    aiDailyLimit: aiDailyLimitSetting(),
     signupsPerHour: numberSetting('SIGNUPS_PER_HOUR', 10),
     signinsPerWindow: numberSetting('SIGNINS_PER_IP', 30),
   };

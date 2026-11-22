@@ -181,7 +181,7 @@ describe('assistant status', () => {
   });
 
   it('asks guests to sign in when a key is set', async () => {
-    const keyed = await createTestApp({ anthropicApiKey: 'test-key' });
+    const keyed = await createTestApp({ openaiApiKey: 'test-key' });
     const guest = new TestBrowser(keyed.app);
     expect((await guest.request('GET', '/api/assistant/status')).json().reason).toBe(
       'Sign in to use AI mode.',

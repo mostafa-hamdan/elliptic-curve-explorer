@@ -137,6 +137,22 @@ const LIMITATIONS: Limitation[] = [
     ),
   },
   {
+    title: 'AI mode of the assistant',
+    limit: (
+      <>
+        Needs internet and a server key, with 20 questions per user per hour and a daily cap for all
+        users.
+      </>
+    ),
+    reason: (
+      <>
+        The cap is 50 questions by default and restarts at midnight UTC; after that, and whenever
+        the provider cannot answer, the offline helper takes over. The numbers come from the engine,
+        but the wording of an AI answer can be imperfect.
+      </>
+    ),
+  },
+  {
     title: 'Browsers',
     limit: <>Tested on current versions of Chrome and Edge. Firefox is not verified yet.</>,
     reason: (

@@ -1,7 +1,7 @@
 /**
  * The assistant: a side panel where the user asks questions about elliptic curves and
  * this app, or asks for an explanation of their last result. When the server has an AI
- * key and the user is signed in, answers come from AI mode (Claude Haiku 5.5, with every
+ * key and the user is signed in, answers come from AI mode (the server's provider, with every
  * number computed by the engine); otherwise, and whenever AI mode fails, they come from the
  * offline helper, which needs no network and no key.
  */
@@ -37,6 +37,10 @@ interface Message {
 interface AiStatus {
   ai: boolean;
   reason: string;
+  /** The company that receives AI questions on this server, when AI mode is set up. */
+  provider?: string;
+  /** The model it uses. */
+  model?: string;
 }
 
 /** Earlier turns sent with an AI question: the last ten, as plain text. */
@@ -127,19 +131,23 @@ export function AssistantPanel() {
     }
     setBusy(true);
     try {
-      const result = await api<{ answer?: string; declined?: boolean; fallback?: string }>(
-        'POST',
-        '/api/assistant',
-        {
-          question: trimmed,
-          history: historyFor(earlier),
-          context: describeWork(context, {
-            pointP: state.pointP,
-            pointQ: state.pointQ,
-            k: state.k,
-          }),
-        },
-      );
+      const result = await api<{
+        answer?: string;
+        declined?: boolean;
+        fallback?: string;
+        /** A limit at the provider: the offline helper answers with no warning. */
+        quiet?: boolean;
+        /** AI mode is off for now (the daily cap): the header should say so. */
+        aiOff?: boolean;
+      }>('POST', '/api/assistant', {
+        question: trimmed,
+        history: historyFor(earlier),
+        context: describeWork(context, {
+          pointP: state.pointP,
+          pointQ: state.pointQ,
+          k: state.k,
+        }),
+      });
       if (result.answer) {
         const text = result.answer;
         setMessages((current) => [
@@ -147,9 +155,15 @@ export function AssistantPanel() {
           { id: nextId.current++, role: 'assistant', text, source: 'ai' },
         ]);
       } else {
+        // The header must stay truthful: it no longer claims AI mode for the next question.
+        if ((result.quiet || result.aiOff) && result.fallback) {
+          setAiStatus({ ai: false, reason: result.fallback });
+        }
         answerHere(
           trimmed,
-          `${result.fallback ?? 'AI mode did not answer.'} Answered by the offline helper.`,
+          result.quiet
+            ? undefined
+            : `${result.fallback ?? 'AI mode did not answer.'} Answered by the offline helper.`,
         );
       }
     } catch {
@@ -202,7 +216,7 @@ export function AssistantPanel() {
             </h2>
             <p className="text-xs text-muted" data-testid="assistant-mode">
               {aiOn
-                ? 'AI mode · Claude Haiku 5.5, numbers from the engine'
+                ? `AI mode · ${aiStatus?.provider ? `${aiStatus.provider} ${aiStatus.model ?? ''}, ` : ''}numbers from the engine`
                 : `Offline helper · ${aiStatus?.reason ?? 'built-in answers, no internet needed'}`}
             </p>
           </div>

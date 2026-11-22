@@ -7,14 +7,14 @@ import type { FastifyReply, FastifyRequest } from 'fastify';
 import type { ServerConfig } from '../config.ts';
 import type { Database } from '../db/client.ts';
 import { recoveryCodes } from '../db/schema.ts';
-import type { AssistantClient } from '../assistant/run.ts';
+import type { AssistantProvider } from '../assistant/run.ts';
 import type { Auth } from '../auth/sessions.ts';
 import { keyedHash, normalizeRecoveryCode, recoveryCode } from '../security/crypto.ts';
 
 declare module 'fastify' {
   interface FastifyInstance {
-    /** The database, the settings and the AI client (null without a key), shared by every route. */
-    ctx: { db: Database; config: ServerConfig; ai: AssistantClient | null };
+    /** The database, the settings and the AI provider (null without a key), for every route. */
+    ctx: { db: Database; config: ServerConfig; ai: AssistantProvider | null };
   }
   interface FastifyRequest {
     /** Who is signed in, or null; filled in before every API route runs. */

@@ -5,6 +5,7 @@
  * is returned as JSON text the model reads.
  */
 import type Anthropic from '@anthropic-ai/sdk';
+import type OpenAI from 'openai';
 import {
   add,
   addWithSteps,
@@ -37,36 +38,51 @@ const numberText = {
 /** The curve fields shared by most tools. */
 const curveFields = { p: numberText, a: numberText, b: numberText } as const;
 
-/** The tool definitions sent to the model. Strict schemas keep the arguments well-formed. */
-export const ASSISTANT_TOOLS: Anthropic.Tool[] = [
+/** The arguments of one tool, as a JSON schema. */
+interface ToolParameters {
+  type: 'object';
+  properties: Record<string, unknown>;
+  required: string[];
+  additionalProperties: false;
+  /** Both SDKs type a JSON schema as an open object. */
+  [key: string]: unknown;
+}
+
+/** One tool, in a form that does not depend on the AI provider. */
+export interface AssistantToolDefinition {
+  name: string;
+  description: string;
+  parameters: ToolParameters;
+}
+
+/** The six tools. Both providers receive exactly these names, texts and schemas. */
+export const ASSISTANT_TOOLS: AssistantToolDefinition[] = [
   {
     name: 'check_curve',
     description:
       'Check whether p, a, b define a valid elliptic curve Ep(a, b) (p prime > 3, non-singular). Returns the reduced a and b and 4a³ + 27b² mod p.',
-    input_schema: {
+    parameters: {
       type: 'object',
       properties: curveFields,
       required: ['p', 'a', 'b'],
       additionalProperties: false,
     },
-    strict: true,
   },
   {
     name: 'list_points',
     description: `List all points of a curve with p ≤ ${ASSISTANT_LIST_MAX_P}, with the total count including the point at infinity O. At most ${LIST_SHOWN} points are listed.`,
-    input_schema: {
+    parameters: {
       type: 'object',
       properties: curveFields,
       required: ['p', 'a', 'b'],
       additionalProperties: false,
     },
-    strict: true,
   },
   {
     name: 'add_points',
     description:
       'Add two points P + Q on a curve (use the same point twice to double it). Use "O" for the point at infinity. Returns the result and every step: slope fraction, modular inverse, λ, x₃, y₃.',
-    input_schema: {
+    parameters: {
       type: 'object',
       properties: {
         ...curveFields,
@@ -78,13 +94,12 @@ export const ASSISTANT_TOOLS: Anthropic.Tool[] = [
       required: ['p', 'a', 'b', 'px', 'py', 'qx', 'qy'],
       additionalProperties: false,
     },
-    strict: true,
   },
   {
     name: 'multiply_point',
     description:
       'Compute kP with double-and-add. Returns the result, k in binary and the running result after each bit.',
-    input_schema: {
+    parameters: {
       type: 'object',
       properties: {
         ...curveFields,
@@ -95,32 +110,60 @@ export const ASSISTANT_TOOLS: Anthropic.Tool[] = [
       required: ['p', 'a', 'b', 'px', 'py', 'k'],
       additionalProperties: false,
     },
-    strict: true,
   },
   {
     name: 'point_order',
     description: `Find the order of a point (the smallest n ≥ 1 with nP = O) by adding P repeatedly, up to ${ORDER_MAX_STEPS} steps.`,
-    input_schema: {
+    parameters: {
       type: 'object',
       properties: { ...curveFields, px: numberText, py: numberText },
       required: ['p', 'a', 'b', 'px', 'py'],
       additionalProperties: false,
     },
-    strict: true,
   },
   {
     name: 'modular_inverse',
     description:
       'Compute value⁻¹ mod m with the extended Euclidean algorithm, returning every division line. Also says whether m is prime.',
-    input_schema: {
+    parameters: {
       type: 'object',
       properties: { value: numberText, modulus: numberText },
       required: ['value', 'modulus'],
       additionalProperties: false,
     },
-    strict: true,
   },
 ];
+
+/**
+ * The tools in the format of Anthropic's Messages API. Strict schemas keep the arguments
+ * well-formed.
+ *
+ * @returns one tool definition per engine tool.
+ */
+export function anthropicTools(): Anthropic.Tool[] {
+  return ASSISTANT_TOOLS.map(({ name, description, parameters }) => ({
+    name,
+    description,
+    input_schema: parameters,
+    strict: true,
+  }));
+}
+
+/**
+ * The tools in the format of OpenAI's Responses API. Strict schemas keep the arguments
+ * well-formed.
+ *
+ * @returns one function definition per engine tool.
+ */
+export function openAiTools(): OpenAI.Responses.FunctionTool[] {
+  return ASSISTANT_TOOLS.map(({ name, description, parameters }) => ({
+    type: 'function',
+    name,
+    description,
+    parameters: { ...parameters },
+    strict: true,
+  }));
+}
 
 /** Read a whole number from a tool argument (the model's text is untrusted). */
 function number(input: Record<string, unknown>, key: string): bigint {

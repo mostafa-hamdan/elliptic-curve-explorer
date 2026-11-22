@@ -37,7 +37,9 @@ export default defineConfig({
       SESSION_SECRET: 'browser-tests-secret-browser-tests-secret',
       SIGNUPS_PER_HOUR: '10000',
       SIGNINS_PER_IP: '10000',
+      // Empty on purpose: browser tests must never reach a real AI provider.
       ANTHROPIC_API_KEY: '',
+      OPENAI_API_KEY: '',
     },
     // Never reuse a server that is already running: it could be serving an older build.
     reuseExistingServer: false,

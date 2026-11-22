@@ -37,6 +37,7 @@ async function startServer(): Promise<ChildProcess> {
       DATABASE_URL: ':memory:',
       SESSION_SECRET: 'screenshot-secret-screenshot-secret-123',
       ANTHROPIC_API_KEY: '',
+      OPENAI_API_KEY: '',
       OPEN_BROWSER: '0',
     },
   });

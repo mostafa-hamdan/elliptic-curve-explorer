@@ -7,6 +7,7 @@ import { spawn } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { createServer } from 'node:net';
 import { buildApp, DEFAULT_CLIENT_DIR } from './app.ts';
+import { describeAiSetup } from './assistant/provider.ts';
 import { loadConfig, type ServerConfig } from './config.ts';
 import { databaseAddress, openDatabase, type Database } from './db/client.ts';
 import { loadEnvFile, optionalEnv } from './env.ts';
@@ -184,8 +185,6 @@ if (started === null) {
 
 const url = `http://localhost:${started}`;
 console.info(`\nOnCurve is running at ${url}`);
-if (!config.anthropicApiKey) {
-  console.info('The assistant uses its offline helper (no ANTHROPIC_API_KEY in .env).');
-}
+console.info(describeAiSetup(config));
 console.info('Keep this window open while you use the app. Press Ctrl+C to stop.\n');
 if (shouldOpen) openBrowser(url);

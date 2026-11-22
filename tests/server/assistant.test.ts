@@ -7,11 +7,12 @@ import Anthropic from '@anthropic-ai/sdk';
 import { afterEach, describe, expect, it } from 'vitest';
 import type { FastifyInstance } from 'fastify';
 import {
-  ASSISTANT_MODEL,
-  SYSTEM_PROMPT,
-  type AssistantClient,
-} from '../../server/assistant/run.ts';
-import { ASSISTANT_TOOLS, runAssistantTool } from '../../server/assistant/tools.ts';
+  ANTHROPIC_MODEL,
+  anthropicProvider,
+  type AnthropicClient,
+} from '../../server/assistant/anthropic.ts';
+import { SYSTEM_PROMPT, type AssistantProvider } from '../../server/assistant/run.ts';
+import { anthropicTools, ASSISTANT_TOOLS, runAssistantTool } from '../../server/assistant/tools.ts';
 import { AI_MESSAGES_PER_HOUR } from '../../server/routes/assistant.ts';
 import { createTestApp, TestBrowser } from './helpers.ts';
 
@@ -24,7 +25,7 @@ function reply(
     id: 'msg_test',
     type: 'message',
     role: 'assistant',
-    model: ASSISTANT_MODEL,
+    model: ANTHROPIC_MODEL,
     content,
     stop_reason: stopReason,
     stop_sequence: null,
@@ -35,7 +36,7 @@ function reply(
 /** A stand-in client that plays back replies in order and records every request. */
 function scripted(replies: Array<Anthropic.Message | Error>) {
   const requests: Anthropic.MessageCreateParamsNonStreaming[] = [];
-  const client: AssistantClient = {
+  const client: AnthropicClient = {
     messages: {
       create: async (params) => {
         requests.push(structuredClone(params));
@@ -46,7 +47,7 @@ function scripted(replies: Array<Anthropic.Message | Error>) {
       },
     },
   };
-  return { client, requests };
+  return { client: anthropicProvider(client), requests };
 }
 
 let app: FastifyInstance | undefined;
@@ -56,7 +57,7 @@ afterEach(async () => {
 });
 
 /** A signed-in browser on an app that uses the given AI client. */
-async function signedIn(ai: AssistantClient | null): Promise<TestBrowser> {
+async function signedIn(ai: AssistantProvider | null): Promise<TestBrowser> {
   ({ app } = await createTestApp({}, ai));
   const browser = new TestBrowser(app);
   await browser.signUp(`ai-${Math.random()}@example.com`);
@@ -67,7 +68,7 @@ const ASK = { question: 'What is (3, 10) + (9, 7) on E23(1, 1)?', history: [], c
 
 describe('assistant tools (engine-backed)', () => {
   it('declares strict schemas for every tool', () => {
-    for (const tool of ASSISTANT_TOOLS) {
+    for (const tool of anthropicTools()) {
       expect(tool.strict, tool.name).toBe(true);
       expect(tool.input_schema.additionalProperties, tool.name).toBe(false);
     }

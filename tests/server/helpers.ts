@@ -5,7 +5,7 @@
  */
 import type { FastifyInstance, LightMyRequestResponse } from 'fastify';
 import { buildApp } from '../../server/app.ts';
-import type { AssistantClient } from '../../server/assistant/run.ts';
+import type { AssistantProvider } from '../../server/assistant/run.ts';
 import type { ServerConfig } from '../../server/config.ts';
 import { openDatabase, type Database } from '../../server/db/client.ts';
 
@@ -13,7 +13,11 @@ import { openDatabase, type Database } from '../../server/db/client.ts';
 export const TEST_CONFIG: ServerConfig = {
   sessionSecret: 'test-secret-that-is-long-enough-for-the-server-checks',
   hosted: false,
+  aiProvider: 'openai',
   anthropicApiKey: undefined,
+  openaiApiKey: undefined,
+  openaiModel: 'gpt-5-mini',
+  aiDailyLimit: 50,
   signupsPerHour: 10,
   signinsPerWindow: 30,
 };
@@ -25,19 +29,19 @@ export const GOOD_PASSWORD = 'Tangent-chord-reflect-97';
  * Build an app on a brand-new in-memory database.
  *
  * @param config - settings to use instead of the defaults.
- * @param aiClient - a stand-in AI client; by default none (offline helper only).
+ * @param aiProvider - a stand-in AI provider; by default none (offline helper only).
  * @returns the app and its database.
  */
 export async function createTestApp(
   config: Partial<ServerConfig> = {},
-  aiClient?: AssistantClient | null,
+  aiProvider?: AssistantProvider | null,
 ): Promise<{ app: FastifyInstance; db: Database }> {
   const { db } = await openDatabase(':memory:');
   const app = await buildApp({
     config: { ...TEST_CONFIG, ...config },
     db,
     clientDir: 'folder-that-does-not-exist',
-    ...(aiClient !== undefined ? { aiClient } : {}),
+    ...(aiProvider !== undefined ? { aiProvider } : {}),
   });
   return { app, db };
 }

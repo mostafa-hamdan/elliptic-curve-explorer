@@ -2,11 +2,50 @@
  * The Security page: how OnCurve protects accounts, in plain words, one card per
  * protection. The technical details are in SECURITY.md in the repository.
  */
-import type { ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { Callout } from '../components/ui/Callout.tsx';
 import { Card } from '../components/ui/Card.tsx';
 import { Icon, type IconName } from '../components/ui/Icon.tsx';
+import { api } from '../lib/api.ts';
 import { usePageTitle } from '../lib/usePageTitle.ts';
+
+/**
+ * Says which company receives assistant questions on this server. Asked from the server, so
+ * the page cannot drift from the real AI_PROVIDER setting.
+ */
+function AiProviderNote() {
+  const [who, setWho] = useState<{ provider?: string; model?: string } | null>(null);
+
+  useEffect(() => {
+    let canceled = false;
+    api<{ provider?: string; model?: string }>('GET', '/api/assistant/status')
+      .then((status) => {
+        if (!canceled) setWho(status);
+      })
+      .catch(() => {
+        if (!canceled) setWho({});
+      });
+    return () => {
+      canceled = true;
+    };
+  }, []);
+
+  return (
+    <>
+      The offline helper runs in your browser and sends nothing. AI mode is optional and for
+      signed-in users: your question, the last few messages and a short description of your current
+      curve and points go through this server to one provider, OpenAI by default or Anthropic, set
+      by the server’s AI_PROVIDER setting. Your email and password are not sent.{' '}
+      <span className="font-medium text-ink" data-testid="ai-provider-note">
+        {who === null
+          ? ''
+          : who.provider
+            ? `On this server, questions go to ${who.provider} (${who.model}).`
+            : 'AI mode is off on this server, so no questions leave it.'}
+      </span>
+    </>
+  );
+}
 
 interface Protection {
   icon: IconName;
@@ -60,6 +99,11 @@ const PROTECTIONS: Protection[] = [
     icon: 'list',
     title: 'Your data is yours',
     body: 'Every database query is limited to the signed-in account, so no account can read another’s data. Delete my account removes the account and everything in it. There is no analytics and no tracking.',
+  },
+  {
+    icon: 'sparkle',
+    title: 'Who receives assistant questions',
+    body: <AiProviderNote />,
   },
 ];
 

@@ -1,24 +1,22 @@
 /**
- * The AI mode of the assistant: sends the question to Claude Haiku 5.5 together with the
- * engine-backed tools, runs the tools it asks for, and returns the final answer. The key
- * stays on the server; the browser only ever sees the answer text.
+ * What every AI provider of the assistant has in common: the instructions, the limits on
+ * one answer, and the small interface the route talks to. The provider-specific tool loops
+ * live in `anthropic.ts` and `openai.ts`, so both follow exactly the same rules.
  */
-import type Anthropic from '@anthropic-ai/sdk';
-import { ASSISTANT_TOOLS, runAssistantTool } from './tools.ts';
 
-/** The model named in the project specification. */
-export const ASSISTANT_MODEL = 'claude-haiku-5-5';
 /** Most tool rounds in one answer; a normal answer needs one to three. */
-const MAX_TOOL_ROUNDS = 6;
+export const MAX_TOOL_ROUNDS = 6;
 /** Longest answer passed on to the page. */
 export const MAX_ANSWER_LENGTH = 6000;
+/** Most tokens the model may produce in one request. */
+export const MAX_OUTPUT_TOKENS = 4000;
 
-/** The part of the SDK client this module uses (so tests can pass a stand-in). */
-export interface AssistantClient {
-  messages: {
-    create(params: Anthropic.MessageCreateParamsNonStreaming): Promise<Anthropic.Message>;
-  };
-}
+/** Shown when the model refuses a request. */
+export const DECLINED_TEXT =
+  'I cannot help with that request. Ask me about elliptic curves or this app instead.';
+/** Shown when an answer needs more tool rounds than {@link MAX_TOOL_ROUNDS}. */
+export const TOO_MANY_ROUNDS_TEXT =
+  'That needed too many calculations for one answer. Try asking about one step at a time.';
 
 /** One earlier turn of the conversation, as plain text. */
 export interface ChatTurn {
@@ -44,82 +42,63 @@ Write for a graduate student who learned the hand method in class. Be brief: a f
 export type AssistantOutcome =
   { kind: 'answer'; text: string } | { kind: 'declined'; text: string };
 
+/** How the page should treat a provider failure. */
+export interface FailureNotice {
+  /** A short reason, safe to show (never the provider's own error text). */
+  reason: string;
+  /** True for limits on the provider's side: the offline helper answers with no warning. */
+  quiet: boolean;
+}
+
+/** One AI provider, as the route sees it. */
+export interface AssistantProvider {
+  /** The company that receives the questions, for the page and the start-up message. */
+  name: 'OpenAI' | 'Anthropic';
+  /** The model, as shown to users. */
+  model: string;
+  /**
+   * Answer one question.
+   *
+   * @param history - earlier turns, oldest first, as plain text.
+   * @param question - the new question.
+   * @param context - a short description of the user's current work, if any.
+   * @returns the answer text, or a polite refusal.
+   * @throws the SDK's errors, which the route turns into a fallback to the offline helper.
+   */
+  ask(history: ChatTurn[], question: string, context: string): Promise<AssistantOutcome>;
+  /**
+   * Classify a failure from {@link ask}.
+   *
+   * @param error - what was thrown.
+   * @returns the reason to show and whether to stay quiet.
+   */
+  explainFailure(error: unknown): FailureNotice;
+}
+
 /**
- * Answer one question in AI mode.
+ * The text of the new user message, with the user's current work in front when there is any.
  *
- * @param client - the Claude API client (or a stand-in in tests).
- * @param history - earlier turns, oldest first, as plain text.
- * @param question - the new question.
- * @param context - a short description of the user's current work, if any.
- * @returns the answer text, or a polite refusal.
- * @throws the SDK's errors (network, key, rate limit), which the route turns into a
- *         fallback to the offline helper.
+ * @param question - the question.
+ * @param context - a short description of the current work, or an empty string.
+ * @returns the message text.
  */
-export async function askAssistant(
-  client: AssistantClient,
-  history: ChatTurn[],
-  question: string,
-  context: string,
-): Promise<AssistantOutcome> {
+export function questionText(question: string, context: string): string {
   const intro = context ? `My current work in OnCurve: ${context}\n\nMy question: ` : '';
-  const messages: Anthropic.MessageParam[] = [
-    ...history.map((turn): Anthropic.MessageParam => ({ role: turn.role, content: turn.text })),
-    { role: 'user', content: `${intro}${question}` },
-  ];
+  return `${intro}${question}`;
+}
 
-  for (let round = 0; round <= MAX_TOOL_ROUNDS; round += 1) {
-    const response = await client.messages.create({
-      model: ASSISTANT_MODEL,
-      max_tokens: 4000,
-      system: SYSTEM_PROMPT,
-      // Short chat answers: low effort keeps them quick; thinking stays adaptive.
-      output_config: { effort: 'low' },
-      tools: ASSISTANT_TOOLS,
-      messages,
-    });
-
-    if (response.stop_reason === 'refusal') {
-      return {
-        kind: 'declined',
-        text: 'I cannot help with that request. Ask me about elliptic curves or this app instead.',
-      };
-    }
-
-    const toolCalls = response.content.filter(
-      (block): block is Anthropic.ToolUseBlock => block.type === 'tool_use',
-    );
-    if (response.stop_reason !== 'tool_use' || toolCalls.length === 0) {
-      const text = response.content
-        .filter((block): block is Anthropic.TextBlock => block.type === 'text')
-        .map((block) => block.text)
-        .join('\n')
-        .trim();
-      const cut = response.stop_reason === 'max_tokens' ? '\n\n(The answer was cut short.)' : '';
-      return {
-        kind: 'answer',
-        text:
-          (text || 'I could not form an answer. Please rephrase the question.').slice(
-            0,
-            MAX_ANSWER_LENGTH,
-          ) + cut,
-      };
-    }
-
-    // Keep the whole assistant turn (thinking blocks included) and answer every tool call
-    // in one user message, as the API expects.
-    messages.push({ role: 'assistant', content: response.content });
-    messages.push({
-      role: 'user',
-      content: toolCalls.map((call): Anthropic.ToolResultBlockParam => ({
-        type: 'tool_result',
-        tool_use_id: call.id,
-        content: runAssistantTool(call.name, call.input),
-      })),
-    });
-  }
-
-  return {
-    kind: 'answer',
-    text: 'That needed too many calculations for one answer. Try asking about one step at a time.',
-  };
+/**
+ * Turn the model's final text into the answer for the page.
+ *
+ * Edge cases: an empty text becomes a request to rephrase, an over-long one is cut to
+ * {@link MAX_ANSWER_LENGTH}, and an answer stopped by the token limit says so.
+ *
+ * @param text - the model's text.
+ * @param cutShort - true when the model ran out of tokens.
+ * @returns the finished outcome.
+ */
+export function finishAnswer(text: string, cutShort: boolean): AssistantOutcome {
+  const body = text.trim() || 'I could not form an answer. Please rephrase the question.';
+  const cut = cutShort ? '\n\n(The answer was cut short.)' : '';
+  return { kind: 'answer', text: body.slice(0, MAX_ANSWER_LENGTH) + cut };
 }

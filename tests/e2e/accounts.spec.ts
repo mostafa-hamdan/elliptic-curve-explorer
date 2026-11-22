@@ -242,7 +242,11 @@ test.describe('accounts', () => {
   test('the Security page explains every protection', async ({ page }) => {
     await page.goto('/security');
     await expect(page).toHaveTitle('Security · OnCurve');
-    await expect(page.getByTestId('protections').locator('li')).toHaveCount(9);
+    await expect(page.getByTestId('protections').locator('li')).toHaveCount(10);
+    // The browser tests run with no AI key, so the page must say nothing leaves the server.
+    await expect(page.getByTestId('ai-provider-note')).toHaveText(
+      'AI mode is off on this server, so no questions leave it.',
+    );
     await expect(page.getByText(/Argon2id/)).toBeVisible();
   });
 });

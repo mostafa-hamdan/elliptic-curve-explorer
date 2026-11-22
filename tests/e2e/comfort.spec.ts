@@ -306,4 +306,75 @@ test.describe('assistant (AI mode, with the server answers simulated)', () => {
     );
     await expect(fallback).toContainText('identity of the group');
   });
+
+  test('names the provider that receives the questions', async ({ page }) => {
+    await page.route('**/api/assistant/status', (route) =>
+      route.fulfill({
+        json: { ai: true, reason: 'AI mode is ready.', provider: 'OpenAI', model: 'gpt-5-mini' },
+      }),
+    );
+    await openExplorer(page);
+    await page.getByRole('button', { name: 'Assistant' }).click();
+    await expect(page.getByTestId('assistant-mode')).toHaveText(
+      'AI mode · OpenAI gpt-5-mini, numbers from the engine',
+    );
+    await page.goto('/security');
+    await expect(page.getByTestId('ai-provider-note')).toHaveText(
+      'On this server, questions go to OpenAI (gpt-5-mini).',
+    );
+  });
+
+  test('a limit at the provider falls back quietly, with no warning', async ({ page }) => {
+    let calls = 0;
+    await page.route('**/api/assistant/status', (route) =>
+      route.fulfill({ json: { ai: true, reason: 'AI mode is ready.', provider: 'OpenAI' } }),
+    );
+    await page.route('**/api/assistant', (route) => {
+      calls += 1;
+      return route.fulfill({
+        json: { fallback: 'AI mode is unavailable right now.', quiet: true },
+      });
+    });
+    await openExplorer(page);
+    await page.getByRole('button', { name: 'Assistant' }).click();
+    const panel = page.getByTestId('assistant');
+    await expect(panel.getByTestId('assistant-mode')).toContainText('AI mode ·');
+
+    const input = page.getByLabel('Your question');
+    await input.fill('What is the point at infinity?');
+    await input.press('Enter');
+    const answer = panel.getByTestId('assistant-answer').last();
+    await expect(answer).toContainText('identity of the group');
+    await expect(answer.getByTestId('assistant-notice')).toHaveCount(0);
+    await expect(answer).not.toContainText('AI answer');
+    // The header stops claiming AI mode, and the next question stays on this computer.
+    await expect(panel.getByTestId('assistant-mode')).toHaveText(
+      'Offline helper · AI mode is unavailable right now.',
+    );
+    await input.fill('What is a singular curve?');
+    await input.press('Enter');
+    await expect(panel.getByTestId('assistant-answer')).toHaveCount(2);
+    expect(calls).toBe(1);
+  });
+
+  test('the daily cap shows a short notice and switches to the offline helper', async ({
+    page,
+  }) => {
+    const notice = 'Today’s AI questions are used up. AI mode returns at midnight UTC.';
+    await page.route('**/api/assistant/status', (route) =>
+      route.fulfill({ json: { ai: true, reason: 'AI mode is ready.', provider: 'OpenAI' } }),
+    );
+    await page.route('**/api/assistant', (route) =>
+      route.fulfill({ json: { fallback: notice, aiOff: true } }),
+    );
+    await openExplorer(page);
+    await page.getByRole('button', { name: 'Assistant' }).click();
+    const panel = page.getByTestId('assistant');
+    await expect(panel.getByTestId('assistant-mode')).toContainText('AI mode ·');
+    const input = page.getByLabel('Your question');
+    await input.fill('What is the point at infinity?');
+    await input.press('Enter');
+    await expect(panel.getByTestId('assistant-notice')).toContainText(notice);
+    await expect(panel.getByTestId('assistant-mode')).toHaveText(`Offline helper · ${notice}`);
+  });
 });
