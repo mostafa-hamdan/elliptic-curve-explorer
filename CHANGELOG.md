@@ -8,6 +8,10 @@ All changes a user can see are listed here, newest first.
 
 - The assistant's AI mode can use OpenAI (the new default) or Anthropic, chosen with
   `AI_PROVIDER` in `.env`. The panel and the Security page say which one receives questions.
+- AI answers are checked in code: every point and every value after "=" or "≡" must come
+  from the engine. A failing answer gets one retry, then the offline helper answers.
+- The OpenAI model is `gpt-6-luna` by default, with the reasoning effort as a setting
+  (`OPENAI_REASONING_EFFORT`, `low` by default).
 - A daily cap on AI questions across all users (`AI_DAILY_LIMIT`, 50 by default). When it
   is reached, everyone gets the offline helper with a short notice until midnight UTC.
 

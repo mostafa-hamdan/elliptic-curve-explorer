@@ -122,13 +122,14 @@ The assistant works without any key, using its offline helper. To turn on AI mod
 the file **`.env`** in the project folder and restart the app. Keys stay on the server;
 never paste one anywhere else.
 
-| Line in `.env`       | What it does                                                           |
-| -------------------- | ---------------------------------------------------------------------- |
-| `AI_PROVIDER=openai` | Who receives the questions: `openai` (the default) or `anthropic`.     |
-| `OPENAI_API_KEY=`    | Put your OpenAI key after the `=` when the provider is `openai`.       |
-| `OPENAI_MODEL=`      | The OpenAI model; the default is `gpt-5-mini`.                         |
-| `ANTHROPIC_API_KEY=` | Put your Anthropic key after the `=` when the provider is `anthropic`. |
-| `AI_DAILY_LIMIT=50`  | AI questions per UTC day across all users; `0` turns AI mode off.      |
+| Line in `.env`                | What it does                                                                                                              |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| `AI_PROVIDER=openai`          | Who receives the questions: `openai` (the default) or `anthropic`.                                                        |
+| `OPENAI_API_KEY=`             | Put your OpenAI key after the `=` when the provider is `openai`.                                                          |
+| `OPENAI_MODEL=gpt-6-luna`     | The OpenAI model; the default is `gpt-6-luna`.                                                                            |
+| `OPENAI_REASONING_EFFORT=low` | How hard the model thinks (`none`, `low`, `medium`, …, or `default`). A value the model refuses is dropped automatically. |
+| `ANTHROPIC_API_KEY=`          | Put your Anthropic key after the `=` when the provider is `anthropic`.                                                    |
+| `AI_DAILY_LIMIT=50`           | AI questions per UTC day across all users; `0` turns AI mode off.                                                         |
 
 **Which provider receives the questions.** Only the one named by `AI_PROVIDER`, even when
 both keys are set. It receives the question, the last few messages of the chat, a short
@@ -142,6 +143,12 @@ Completions. A restricted key needs access to Responses and nothing else.
 
 When the daily cap is reached, or OpenAI reports a rate limit, an exhausted budget or a
 model the key may not use, the offline helper takes over.
+
+**Every number is checked.** Before an AI answer is shown, the server checks that every
+point (x, y) and every number right after "=" or "≡" appears in a tool result, the
+question, the current work or an earlier message. If one does not, the model is asked once
+to fix it; if it fails again, the offline helper answers instead. Numbers elsewhere in the
+prose, such as "a 256-bit curve", are not checked.
 
 ## Troubleshooting
 

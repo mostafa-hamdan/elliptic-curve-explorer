@@ -87,10 +87,22 @@ These are meant as raw material for the project report.
   engine's own step data. AI mode is used only when the server has a key and the user is
   signed in; any failure falls back to the offline helper with a short notice.
 - **AI mode has two providers, chosen by `AI_PROVIDER`.** OpenAI is the default
-  (`gpt-5-mini`, minimal reasoning effort, the Responses API); Anthropic stays available
+  (`gpt-6-luna`, the Responses API); Anthropic stays available
   (Claude Haiku 5.5, effort `low`). Both use a manual tool loop with the same six
   engine-backed tools and strict schemas, at most six rounds, 20 questions per user per
   hour, 500 characters per question.
+- **The reasoning effort is a setting** (`OPENAI_REASONING_EFFORT`, `low` by default),
+  passed on as written so a future value needs no code change. If the model refuses it,
+  the request is sent again without it, the setting is dropped for the rest of the run, and
+  the server window says so once.
+- **"Every number from a tool" is enforced in code** (`server/assistant/numberCheck.ts`).
+  Checked: every point (x, y) and every number right after "=" or "≡". Allowed sources:
+  tool results, the question, the current work and earlier turns. Numbers in prose, in
+  names (secp256k1, E23(1, 1)) and in algebra (2P, 3x₁², 2^256) are not checked, so
+  conceptual answers pass. A failure gets one reminder; a second failure goes to the
+  offline helper with a notice. The tool results include every intermediate value of the
+  hand method (λ products, λ², x₁ − x₃, the inverse check), so a fully worked answer can
+  quote all of them.
 - **The provider never changes by itself.** A missing key or a mistyped `AI_PROVIDER` turns
   AI mode off, so questions cannot reach a company nobody chose.
 - **Responses API with `store: false`.** Each request carries the whole exchange, including
