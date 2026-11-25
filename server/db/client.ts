@@ -6,15 +6,9 @@ import { mkdirSync } from 'node:fs';
 import { dirname } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { createClient, type Client } from '@libsql/client';
-import { drizzle, type LibSQLDatabase } from 'drizzle-orm/libsql';
-import { migrate } from 'drizzle-orm/libsql/migrator';
-import * as schema from './schema.ts';
+import { prepareDatabase, type Database } from './prepare.ts';
 
-/** The typed database handle used by every route. */
-export type Database = LibSQLDatabase<typeof schema>;
-
-/** Folder with the SQL migrations. Built from this file's location, so spaces are fine. */
-const MIGRATIONS = fileURLToPath(new URL('./migrations', import.meta.url));
+export type { Database } from './prepare.ts';
 
 /** Default local database file: `data/oncurve.db` in the project folder. */
 export const DEFAULT_DATABASE_FILE = fileURLToPath(
@@ -48,10 +42,5 @@ export async function openDatabase(
   url: string,
   authToken?: string,
 ): Promise<{ db: Database; client: Client }> {
-  const client = createClient({ url, authToken });
-  // SQLite only enforces foreign keys (and so ON DELETE CASCADE) when asked to.
-  await client.execute('PRAGMA foreign_keys = ON');
-  const db = drizzle(client, { schema });
-  await migrate(db, { migrationsFolder: MIGRATIONS });
-  return { db, client };
+  return prepareDatabase(createClient({ url, authToken }));
 }

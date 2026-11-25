@@ -156,3 +156,6 @@ data/
 *.db-journal
 *.db-wal
 *.db-shm
+
+# Vercel build output and project link (made by the build and the Vercel tools)
+.vercel
