@@ -250,3 +250,62 @@ test.describe('accounts', () => {
     await expect(page.getByText(/Argon2id/)).toBeVisible();
   });
 });
+
+test.describe('sensitive actions and password fields', () => {
+  test('every password box starts hidden and Show reveals only that box', async ({ page }) => {
+    for (const path of ['/signin', '/signup', '/recover']) {
+      await page.goto(path);
+      const boxes = page.locator('input[type="password"]');
+      const count = await boxes.count();
+      expect(count, path).toBeGreaterThan(0);
+      if (count > 1) {
+        await page.getByRole('button', { name: 'Show password' }).first().click();
+        await expect(page.locator('input[type="password"]')).toHaveCount(count - 1);
+        await page.getByRole('button', { name: 'Hide password' }).click();
+      }
+      await expect(page.locator('input[type="password"]')).toHaveCount(count);
+    }
+    // The right hints for password managers.
+    await page.goto('/signup');
+    await expect(page.getByLabel('Password', { exact: true })).toHaveAttribute(
+      'autocomplete',
+      'new-password',
+    );
+    await page.goto('/signin');
+    await expect(page.getByLabel('Password', { exact: true })).toHaveAttribute(
+      'autocomplete',
+      'current-password',
+    );
+  });
+
+  test('with 2FA on, changing the password needs a code, and the log updates at once', async ({
+    page,
+  }) => {
+    const email = newEmail('sensitive');
+    const codes = await signUp(page, email);
+    await page.getByRole('tab', { name: 'Security' }).click();
+    await page.getByRole('button', { name: 'Turn on two-factor authentication' }).click();
+    const secret = (await page.getByTestId('totp-secret').textContent())!.trim();
+    await page.getByLabel('2. Type the 6-digit code the app shows').fill(totp(secret));
+    await page.getByRole('button', { name: 'Confirm and turn on' }).click();
+    await expect(page.getByTestId('twofactor-notice')).toContainText('is on');
+    await expect(page.getByTestId('activity-list')).toContainText(
+      'Two-factor authentication turned on',
+    );
+
+    const form = page.getByTestId('password-form');
+    await form.getByLabel('Current password').fill(PASSWORD);
+    await form.getByLabel('New password').fill('Another-strong-secret-55');
+    await form.getByRole('button', { name: 'Change password' }).click();
+    await expect(page.getByTestId('password-notice')).toContainText(
+      'Type the code from your authenticator app',
+    );
+    await form.getByLabel('Code from your app, or a recovery code').fill(codes[0]!);
+    await form.getByRole('button', { name: 'Change password' }).click();
+    await expect(page.getByTestId('password-notice')).toContainText('Password changed');
+    await expect(page.getByTestId('activity-list')).toContainText('Password changed');
+    // The boxes are emptied and hidden again.
+    await expect(form.getByLabel('New password')).toHaveValue('');
+    await expect(form.getByLabel('New password')).toHaveAttribute('type', 'password');
+  });
+});

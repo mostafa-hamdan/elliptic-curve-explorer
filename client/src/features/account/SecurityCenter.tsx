@@ -21,6 +21,71 @@ function when(time: number): string {
   return new Date(time).toLocaleString('en-GB', { dateStyle: 'medium', timeStyle: 'short' });
 }
 
+/** Fired after every security change, so the activity and session lists reload. */
+const SECURITY_CHANGED = 'oncurve:security-changed';
+
+/** Tell the other sections that something changed. */
+function announceChange(): void {
+  window.dispatchEvent(new Event(SECURITY_CHANGED));
+}
+
+/**
+ * Run a loader now and again after every security change.
+ *
+ * @param load - the function that fetches a list.
+ */
+function useReloadOnChange(load: () => void): void {
+  useEffect(() => {
+    load();
+    window.addEventListener(SECURITY_CHANGED, load);
+    return () => window.removeEventListener(SECURITY_CHANGED, load);
+  }, [load]);
+}
+
+/**
+ * The second-factor box shown for sensitive actions when 2FA is on.
+ *
+ * @param value - what was typed.
+ * @param onChange - called with the new text.
+ */
+function SecondFactorField({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  return (
+    <InputField
+      label="Code from your app, or a recovery code"
+      autoComplete="one-time-code"
+      value={value}
+      onChange={onChange}
+      maxLength={20}
+      hint="Two-factor authentication is on, so this change needs a code as well."
+    />
+  );
+}
+
+/**
+ * A hidden copy of the account's email, so password managers know which saved password a
+ * change-password form belongs to.
+ */
+function UsernameForManagers({ email }: { email: string }) {
+  return (
+    <input
+      type="email"
+      name="username"
+      autoComplete="username"
+      value={email}
+      readOnly
+      hidden
+      tabIndex={-1}
+      aria-hidden="true"
+    />
+  );
+}
+
 /** A message under a form: green for success, red for an error. */
 type Notice = { tone: 'success' | 'danger'; text: string } | null;
 
@@ -63,6 +128,7 @@ function PasswordSection() {
   const { user } = useAuth();
   const [current, setCurrent] = useState('');
   const [next, setNext] = useState('');
+  const [code, setCode] = useState('');
   const [check, setCheck] = useState<PasswordCheck | null>(null);
   const [notice, setNotice] = useState<Notice>(null);
   const handleCheck = useCallback((value: PasswordCheck | null) => setCheck(value), []);
@@ -73,9 +139,15 @@ function PasswordSection() {
       return setNotice({ tone: 'danger', text: 'Fill in both passwords.' });
     if (check?.problem) return setNotice({ tone: 'danger', text: check.problem });
     try {
-      await api('POST', '/api/auth/password', { currentPassword: current, newPassword: next });
+      await api('POST', '/api/auth/password', {
+        currentPassword: current,
+        newPassword: next,
+        ...(user?.twoFactor && code.trim() ? { code: code.trim() } : {}),
+      });
       setCurrent('');
       setNext('');
+      setCode('');
+      announceChange();
       setNotice({
         tone: 'success',
         text: 'Password changed. Other browsers signed in to this account were signed out.',
@@ -92,6 +164,7 @@ function PasswordSection() {
       description="Changing it signs out every other browser."
     >
       <form onSubmit={handleSubmit} noValidate className="space-y-3" data-testid="password-form">
+        <UsernameForManagers email={user?.email ?? ''} />
         <InputField
           label="Current password"
           type="password"
@@ -111,6 +184,7 @@ function PasswordSection() {
           />
           <PasswordMeter password={next} email={user?.email ?? ''} onCheck={handleCheck} />
         </div>
+        {user?.twoFactor && <SecondFactorField value={code} onChange={setCode} />}
         <NoticeLine notice={notice} testId="password-notice" />
         <Button type="submit" variant="primary">
           Change password
@@ -145,6 +219,7 @@ function TwoFactorSection() {
       setSetup(null);
       setCode('');
       await refresh();
+      announceChange();
       setNotice({
         tone: 'success',
         text: 'Two-factor authentication is on. Signing in now needs a code from your app.',
@@ -157,10 +232,14 @@ function TwoFactorSection() {
   async function disable(event: FormEvent) {
     event.preventDefault();
     try {
-      await api('POST', '/api/auth/2fa/disable', { password, code: code.trim() });
+      await api('POST', '/api/auth/2fa/disable', {
+        password,
+        ...(code.trim() ? { code: code.trim() } : {}),
+      });
       setPassword('');
       setCode('');
       await refresh();
+      announceChange();
       setNotice({ tone: 'success', text: 'Two-factor authentication is off.' });
     } catch (caught) {
       setNotice({ tone: 'danger', text: errorMessage(caught) });
@@ -253,6 +332,7 @@ function TwoFactorSection() {
 function RecoverySection() {
   const { user, recoveryCodesLeft, refresh } = useAuth();
   const [password, setPassword] = useState('');
+  const [code, setCode] = useState('');
   const [codes, setCodes] = useState<string[] | null>(null);
   const [notice, setNotice] = useState<Notice>(null);
 
@@ -261,11 +341,14 @@ function RecoverySection() {
     try {
       const result = await api<{ recoveryCodes: string[] }>('POST', '/api/auth/recovery-codes', {
         password,
+        ...(user?.twoFactor && code.trim() ? { code: code.trim() } : {}),
       });
       setCodes(result.recoveryCodes);
       setPassword('');
+      setCode('');
       setNotice(null);
       await refresh();
+      announceChange();
     } catch (caught) {
       setNotice({ tone: 'danger', text: errorMessage(caught) });
     }
@@ -303,7 +386,8 @@ function RecoverySection() {
             onChange={setPassword}
             maxLength={256}
           />
-          <NoticeLine notice={notice} />
+          {user?.twoFactor && <SecondFactorField value={code} onChange={setCode} />}
+          <NoticeLine notice={notice} testId="recovery-notice" />
           <Button type="submit">Create new recovery codes</Button>
         </form>
       )}
@@ -334,9 +418,7 @@ function SessionsSection() {
     }
   }, []);
 
-  useEffect(() => {
-    void load();
-  }, [load]);
+  useReloadOnChange(load);
 
   async function end(row: SessionRow) {
     try {
@@ -345,7 +427,7 @@ function SessionsSection() {
         await refresh();
         navigate('/signin');
       } else {
-        await load();
+        announceChange();
       }
     } catch (caught) {
       setNotice({ tone: 'danger', text: errorMessage(caught) });
@@ -417,22 +499,15 @@ function ActivitySection() {
     null,
   );
 
-  useEffect(() => {
-    let canceled = false;
+  const load = useCallback(() => {
     api<{ activity: Array<{ event: string; device: string; at: number }> }>(
       'GET',
       '/api/account/activity',
     )
-      .then((result) => {
-        if (!canceled) setRows(result.activity);
-      })
-      .catch(() => {
-        if (!canceled) setRows([]);
-      });
-    return () => {
-      canceled = true;
-    };
+      .then((result) => setRows(result.activity))
+      .catch(() => setRows([]));
   }, []);
+  useReloadOnChange(load);
 
   return (
     <Section
@@ -474,7 +549,7 @@ function DeleteSection() {
       await api(
         'POST',
         '/api/account/delete',
-        user?.twoFactor ? { password, code: code.trim() } : { password },
+        user?.twoFactor && code.trim() ? { password, code: code.trim() } : { password },
       );
       // Leave the account page first; once the user is gone it would send us to sign-in.
       navigate('/', { replace: true });

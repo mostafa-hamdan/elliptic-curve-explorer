@@ -51,6 +51,11 @@ export async function createTestApp(
 export class TestBrowser {
   private cookies = new Map<string, string>();
   csrfToken = '';
+  /**
+   * Send requests the way the website does (X-OnCurve-Client: web), so expected refusals
+   * come back as 200 with the real status in X-OnCurve-Status.
+   */
+  web = false;
 
   constructor(
     private readonly app: FastifyInstance,
@@ -96,6 +101,7 @@ export class TestBrowser {
       cookie: this.cookieHeader(),
     };
     if (options.csrf !== false && method !== 'GET') headers['x-csrf-token'] = this.csrfToken;
+    if (this.web) headers['x-oncurve-client'] = 'web';
     const response = await this.app.inject({
       method,
       url,

@@ -18,7 +18,8 @@ import {
   startSession,
   type User,
 } from '../auth/sessions.ts';
-import { keyedHash, normalizeRecoveryCode, open, seal } from '../security/crypto.ts';
+import { checkSecondFactor, confirmIdentity, useRecoveryCode } from '../auth/confirm.ts';
+import { open, seal } from '../security/crypto.ts';
 import { getDecoyHash, hashPassword, verifyPassword } from '../security/passwords.ts';
 import {
   clearRateLimit,
@@ -74,53 +75,6 @@ async function logActivity(
     device: describeDevice(request.headers['user-agent']),
     at: Date.now(),
   });
-}
-
-/**
- * Check a second-factor code: a 6-digit authenticator code, or one of the recovery codes
- * (which is then used up).
- *
- * @returns 'totp' or 'recovery' when accepted, null when not.
- */
-async function checkSecondFactor(
-  app: FastifyInstance,
-  user: User,
-  code: string,
-): Promise<'totp' | 'recovery' | null> {
-  const { db, config } = app.ctx;
-  if (/^\s*\d{3}\s?\d{3}\s*$/.test(code) && user.totpSecret) {
-    const step = checkTotp(open(config.sessionSecret, user.totpSecret), code, user.totpLastStep);
-    if (step === null) return null;
-    await db.update(users).set({ totpLastStep: step }).where(eq(users.id, user.id));
-    return 'totp';
-  }
-  return (await useRecoveryCode(app, user.id, code)) ? 'recovery' : null;
-}
-
-/**
- * Use up one recovery code if it matches an unused code of the account.
- *
- * @returns true when a code was accepted (and is now marked as used).
- */
-async function useRecoveryCode(
-  app: FastifyInstance,
-  userId: number,
-  code: string,
-): Promise<boolean> {
-  const { db, config } = app.ctx;
-  const codeHash = keyedHash(config.sessionSecret, normalizeRecoveryCode(code));
-  const updated = await db
-    .update(recoveryCodes)
-    .set({ usedAt: Date.now() })
-    .where(
-      and(
-        eq(recoveryCodes.userId, userId),
-        eq(recoveryCodes.codeHash, codeHash),
-        isNull(recoveryCodes.usedAt),
-      ),
-    )
-    .returning({ id: recoveryCodes.id });
-  return updated.length === 1;
 }
 
 /** Recovery codes an account has left. */
@@ -348,13 +302,17 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
     },
   );
 
-  app.post<{ Body: { currentPassword: string; newPassword: string } }>(
+  app.post<{ Body: { currentPassword: string; newPassword: string; code?: string } }>(
     '/api/auth/password',
     {
       schema: {
         body: {
           type: 'object',
-          properties: { currentPassword: passwordSchema, newPassword: passwordSchema },
+          properties: {
+            currentPassword: passwordSchema,
+            newPassword: passwordSchema,
+            code: codeSchema,
+          },
           required: ['currentPassword', 'newPassword'],
           additionalProperties: false,
         },
@@ -363,11 +321,20 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
     async (request, reply) => {
       const auth = requireAuth(request, reply);
       if (!auth) return reply;
-      if (!(await verifyPassword(auth.user.passwordHash, request.body.currentPassword))) {
-        return fail(reply, 400, 'Your current password is not right.');
-      }
       const check = checkPassword(request.body.newPassword, auth.user.email);
       if (check.problem) return fail(reply, 400, check.problem);
+      if (
+        !(await confirmIdentity(
+          app,
+          reply,
+          auth.user,
+          request.body.currentPassword,
+          request.body.code,
+          'Your current password is not right.',
+        ))
+      ) {
+        return reply;
+      }
       await db
         .update(users)
         .set({ passwordHash: await hashPassword(request.body.newPassword) })
@@ -431,14 +398,14 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
     },
   );
 
-  app.post<{ Body: { password: string; code: string } }>(
+  app.post<{ Body: { password: string; code?: string } }>(
     '/api/auth/2fa/disable',
     {
       schema: {
         body: {
           type: 'object',
           properties: { password: passwordSchema, code: codeSchema },
-          required: ['password', 'code'],
+          required: ['password'],
           additionalProperties: false,
         },
       },
@@ -448,11 +415,10 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
       if (!auth) return reply;
       if (!auth.user.totpSecret)
         return fail(reply, 400, 'Two-factor authentication is already off.');
-      if (!(await verifyPassword(auth.user.passwordHash, request.body.password))) {
-        return fail(reply, 400, 'Your password is not right.');
-      }
-      if (!(await checkSecondFactor(app, auth.user, request.body.code))) {
-        return fail(reply, 400, 'That code is not right.');
+      if (
+        !(await confirmIdentity(app, reply, auth.user, request.body.password, request.body.code))
+      ) {
+        return reply;
       }
       await db
         .update(users)
@@ -463,13 +429,13 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
     },
   );
 
-  app.post<{ Body: { password: string } }>(
+  app.post<{ Body: { password: string; code?: string } }>(
     '/api/auth/recovery-codes',
     {
       schema: {
         body: {
           type: 'object',
-          properties: { password: passwordSchema },
+          properties: { password: passwordSchema, code: codeSchema },
           required: ['password'],
           additionalProperties: false,
         },
@@ -478,8 +444,10 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
     async (request, reply) => {
       const auth = requireAuth(request, reply);
       if (!auth) return reply;
-      if (!(await verifyPassword(auth.user.passwordHash, request.body.password))) {
-        return fail(reply, 400, 'Your password is not right.');
+      if (
+        !(await confirmIdentity(app, reply, auth.user, request.body.password, request.body.code))
+      ) {
+        return reply;
       }
       const codes = await newRecoveryCodes(db, config, auth.user.id);
       await logActivity(app, request, auth.user.id, 'New recovery codes created');

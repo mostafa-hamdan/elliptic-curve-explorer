@@ -15,9 +15,7 @@ import {
   users,
 } from '../db/schema.ts';
 import { cookieOptions, issueCsrfToken, SESSION_COOKIE } from '../auth/sessions.ts';
-import { checkTotp } from '../security/totp.ts';
-import { keyedHash, normalizeRecoveryCode, open } from '../security/crypto.ts';
-import { verifyPassword } from '../security/passwords.ts';
+import { confirmIdentity } from '../auth/confirm.ts';
 import { codeSchema, fail, passwordSchema, requireAuth } from './shared.ts';
 
 /** How many security events the Security center shows. */
@@ -103,37 +101,8 @@ export async function accountRoutes(app: FastifyInstance): Promise<void> {
       const auth = requireAuth(request, reply);
       if (!auth) return reply;
       const user = auth.user;
-      if (!(await verifyPassword(user.passwordHash, request.body.password))) {
-        return fail(reply, 400, 'Your password is not right.');
-      }
-      if (user.totpSecret) {
-        const code = request.body.code?.trim() ?? '';
-        const totpOk =
-          /^\d{6}$/.test(code) &&
-          checkTotp(open(config.sessionSecret, user.totpSecret), code, user.totpLastStep) !== null;
-        const recoveryOk =
-          !totpOk &&
-          (
-            await db
-              .select({ id: recoveryCodes.id })
-              .from(recoveryCodes)
-              .where(
-                and(
-                  eq(recoveryCodes.userId, user.id),
-                  eq(
-                    recoveryCodes.codeHash,
-                    keyedHash(config.sessionSecret, normalizeRecoveryCode(code)),
-                  ),
-                ),
-              )
-          ).length > 0;
-        if (!totpOk && !recoveryOk) {
-          return fail(
-            reply,
-            400,
-            'Type the code from your authenticator app (or a recovery code) to confirm.',
-          );
-        }
+      if (!(await confirmIdentity(app, reply, user, request.body.password, request.body.code))) {
+        return reply;
       }
       // Every table is cleared explicitly, so nothing is left behind even if the database
       // has foreign-key enforcement switched off.

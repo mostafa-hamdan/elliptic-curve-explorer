@@ -2,7 +2,7 @@
  * A labeled one-line input for words rather than curve numbers: email addresses,
  * passwords (with a Show button), codes and names. Same look and messages as TextField.
  */
-import { useId, useState, type ReactNode } from 'react';
+import { useEffect, useId, useState, type ReactNode } from 'react';
 import { cx } from '../../lib/cx.ts';
 import { Icon } from './Icon.tsx';
 
@@ -46,6 +46,11 @@ export function InputField({
   const isPassword = type === 'password';
   const hasMessage = Boolean(error) || Boolean(hint);
 
+  // Once the box is emptied (for example after the form was sent), hide it again.
+  useEffect(() => {
+    if (value === '') setShown(false);
+  }, [value]);
+
   return (
     <div className={cx('min-w-0', className)}>
       <label htmlFor={id} className="mb-1 block text-note font-medium text-ink-soft">
@@ -79,6 +84,7 @@ export function InputField({
             type="button"
             onClick={() => setShown((value) => !value)}
             aria-label={shown ? 'Hide password' : 'Show password'}
+            aria-controls={id}
             className="absolute top-1/2 right-1.5 -translate-y-1/2 cursor-pointer rounded-md px-2 py-1 text-xs font-medium text-primary hover:bg-primary-soft"
           >
             {shown ? 'Hide' : 'Show'}
