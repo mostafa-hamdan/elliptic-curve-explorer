@@ -141,6 +141,6 @@ These are meant as raw material for the project report.
   with "Page crashed", always on the Explorer page, while choosing an example curve or
   running the accessibility check. Nothing in the app's own output points to a bug, and
   Playwright's Firefox build does not start on the development laptop, so it cannot be
-  reproduced there. It is treated as a problem of the test machine: the Firefox job draws
-  in software, records the last console lines when a page crashes, and does not block a
-  change.
+  reproduced there; drawing in software did not change it, and the page logs nothing before
+  it crashes. It is treated as a problem of the test machine: the Firefox job records the
+  last console lines when a page crashes, and does not block a change.

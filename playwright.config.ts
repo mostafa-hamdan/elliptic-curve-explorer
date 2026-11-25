@@ -50,26 +50,10 @@ export default defineConfig({
       name: 'chromium',
       use: { ...devices['Desktop Chrome'], viewport },
     },
-    // Firefox runs on request (PW_FIREFOX=1); CI runs it in its own job. On the CI machines,
-    // which have no graphics card, headless Firefox sometimes crashed its page while drawing
-    // the Explorer, so there it draws in software instead (a test-machine setting only).
+    // Firefox runs on request (PW_FIREFOX=1); CI runs it in its own job, which does not
+    // block a change (see docs/design-notes.md: its page crashes there are a test-machine issue).
     ...(process.env.PW_FIREFOX
-      ? [
-          {
-            name: 'firefox',
-            use: {
-              ...devices['Desktop Firefox'],
-              viewport,
-              launchOptions: {
-                firefoxUserPrefs: {
-                  'gfx.webrender.software': true,
-                  'gfx.canvas.accelerated': false,
-                  'layers.acceleration.disabled': true,
-                },
-              },
-            },
-          },
-        ]
+      ? [{ name: 'firefox', use: { ...devices['Desktop Firefox'], viewport } }]
       : []),
     // The copy of Microsoft Edge installed on the computer, on request (PW_EDGE=1).
     ...(process.env.PW_EDGE
