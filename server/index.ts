@@ -146,7 +146,7 @@ const candidates =
     : Array.from({ length: EXTRA_PORTS + 1 }, (_, index) => DEFAULT_PORT + index);
 const shouldOpen = process.env.OPEN_BROWSER === '1';
 
-const app = await buildApp({ config, db, logger: false });
+const app = await buildApp({ config, db, logger: { level: 'warn' } });
 let started: number | null = null;
 
 for (const port of candidates) {

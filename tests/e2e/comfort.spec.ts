@@ -324,7 +324,7 @@ test.describe('assistant (AI mode, with the server answers simulated)', () => {
     );
   });
 
-  test('a limit at the provider falls back quietly, with no warning', async ({ page }) => {
+  test('a limit at the provider falls back with a short notice', async ({ page }) => {
     let calls = 0;
     await page.route('**/api/assistant/status', (route) =>
       route.fulfill({ json: { ai: true, reason: 'AI mode is ready.', provider: 'OpenAI' } }),
@@ -345,16 +345,56 @@ test.describe('assistant (AI mode, with the server answers simulated)', () => {
     await input.press('Enter');
     const answer = panel.getByTestId('assistant-answer').last();
     await expect(answer).toContainText('identity of the group');
-    await expect(answer.getByTestId('assistant-notice')).toHaveCount(0);
+    await expect(answer.getByTestId('assistant-notice')).toHaveText(
+      'AI mode is unavailable right now. Answered by the offline helper.',
+    );
     await expect(answer).not.toContainText('AI answer');
-    // The header stops claiming AI mode, and the next question stays on this computer.
+    // The header stops claiming AI mode until the server says otherwise.
     await expect(panel.getByTestId('assistant-mode')).toHaveText(
       'Offline helper · AI mode is unavailable right now.',
     );
-    await input.fill('What is a singular curve?');
-    await input.press('Enter');
-    await expect(panel.getByTestId('assistant-answer')).toHaveCount(2);
     expect(calls).toBe(1);
+  });
+
+  test('a stale "offline" status is checked again before a question', async ({ page }) => {
+    let aiReady = false;
+    await page.route('**/api/assistant/status', (route) =>
+      route.fulfill({
+        json: aiReady
+          ? { ai: true, reason: 'AI mode is ready.', provider: 'OpenAI', model: 'gpt-6-luna' }
+          : { ai: false, reason: 'AI mode is not set up on this server.' },
+      }),
+    );
+    await page.route('**/api/assistant', (route) =>
+      route.fulfill({ json: { answer: 'P + Q = **(17, 20)**.', declined: false } }),
+    );
+    await openExplorer(page);
+    await page.getByRole('button', { name: 'Assistant' }).click();
+    const panel = page.getByTestId('assistant');
+    await expect(panel.getByTestId('assistant-mode')).toContainText('Offline helper');
+
+    // The server is now ready (for example, a key was added and the server restarted).
+    aiReady = true;
+    const input = page.getByLabel('Your question');
+    await input.fill('What is (3, 10) + (9, 7) on E23(1, 1)?');
+    await input.press('Enter');
+    const answer = panel.getByTestId('assistant-answer').last();
+    await expect(answer).toContainText('AI answer');
+    await expect(answer).toContainText('P + Q = (17, 20).');
+  });
+
+  test('the offline helper calculates by itself and says why it answered', async ({ page }) => {
+    await openExplorer(page);
+    await page.getByRole('button', { name: 'Assistant' }).click();
+    const panel = page.getByTestId('assistant');
+    const input = page.getByLabel('Your question');
+    await input.fill('What is (3, 10) + (9, 7) on E23(1, 1)?');
+    await input.press('Enter');
+    const answer = panel.getByTestId('assistant-answer').last();
+    await expect(answer).toContainText('(3, 10) + (9, 7) = (17, 20) on E23(1, 1).');
+    await expect(answer.getByTestId('assistant-notice')).toHaveText(
+      'AI mode is not set up on this server. Answered by the offline helper.',
+    );
   });
 
   test('the daily cap shows a short notice and switches to the offline helper', async ({

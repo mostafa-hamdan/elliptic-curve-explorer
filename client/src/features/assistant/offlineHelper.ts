@@ -1,7 +1,8 @@
 /**
  * The offline helper: answers questions without a network or a key. It can explain the
- * last result from the engine's step data, compute a modular inverse or test a prime with
- * the engine, and answer common questions from the built-in topics. Anything outside
+ * last result from the engine's step data; add, double or multiply points, check a point,
+ * compute a modular inverse or test a prime with the engine; and answer common questions
+ * from the built-in topics. Anything outside
  * elliptic curves and this app is politely declined.
  */
 import {
@@ -10,6 +11,7 @@ import {
   isPrime,
   tryParseInteger,
   type Curve,
+  type Point,
 } from '@shared/ecc/index.ts';
 import type { AddOutcome, MultiplyOutcome } from '../explorer/ExplorerContext.tsx';
 import {
@@ -18,6 +20,7 @@ import {
   explainPoints,
   type PointsSummary,
 } from './explain.ts';
+import { answerCalculation } from './calculate.ts';
 import { SUBJECT_WORDS, TOPICS } from './knowledge.ts';
 
 /** Longest question accepted, in characters. */
@@ -34,6 +37,9 @@ export interface HelperContext {
   lastResult: 'add' | 'multiply' | null;
   /** The tab that is showing; breaks ties when deciding what "my last result" means. */
   tab: 'points' | 'add' | 'multiply';
+  /** P and Q from the Explorer, for "what is 2P?": undefined when not usable, null for O. */
+  pointP?: Point | undefined;
+  pointQ?: Point | undefined;
 }
 
 /** An answer and where it came from (used by the tests and to label the answer). */
@@ -191,6 +197,10 @@ export function answerOffline(question: string, context: HelperContext): HelperA
     return explainLast(context);
   }
 
+  // "(3, 10) + (9, 7) on E23(1, 1)", "2(3, 10)", "13 · (5, 1)", "is (3, 10) on the curve?"
+  const calculation = answerCalculation(question, context);
+  if (calculation) return { text: calculation.text, source: 'compute' };
+
   const inverseMatch = text.match(
     /inverse of\s+([+-]?(?:0x[0-9a-f]+|\d+))\s*(?:mod(?:ulo)?|\(mod)\s*([+-]?(?:0x[0-9a-f]+|\d+))/,
   );
@@ -214,7 +224,10 @@ export function answerOffline(question: string, context: HelperContext): HelperA
   }
   if (best) return { text: best.answer, source: 'topic' };
 
-  const onSubject = SUBJECT_WORDS.some((word) => hasWord(text, word));
+  // A point written as (x, y) or a curve written as E23(1, 1) is on the subject too.
+  const onSubject =
+    SUBJECT_WORDS.some((word) => hasWord(text, word)) ||
+    /\(\s*-?\d+\s*,\s*-?\d+\s*\)|\be\s*\d+\s*\(/.test(text);
   if (!onSubject) {
     return {
       text: 'I can only help with **elliptic curves**, modular arithmetic and this app. Try one of the suggestions, or ask something like "how do I add two points?".',

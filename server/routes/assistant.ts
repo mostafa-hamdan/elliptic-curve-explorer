@@ -127,7 +127,7 @@ export async function assistantRoutes(app: FastifyInstance): Promise<void> {
         return { answer: outcome.text, declined: outcome.kind === 'declined' };
       } catch (error) {
         if (error instanceof UnverifiedAnswerError) {
-          request.log.info(
+          request.log.warn(
             { provider: provider.name, values: error.values.length },
             'AI answer failed the number check twice; the offline helper answers',
           );
@@ -136,7 +136,8 @@ export async function assistantRoutes(app: FastifyInstance): Promise<void> {
         const failure = provider.explainFailure(error);
         // Only the status and code are logged: an SDK error object also carries headers.
         const { status, code } = error as { status?: unknown; code?: unknown };
-        request.log.info(
+        // Written to the server window (and the hosting logs), so a fallback can be traced.
+        request.log.warn(
           { provider: provider.name, status, code },
           'AI mode failed; the page falls back to the offline helper',
         );

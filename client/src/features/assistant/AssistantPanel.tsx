@@ -5,13 +5,22 @@
  * number computed by the engine); otherwise, and whenever AI mode fails, they come from the
  * offline helper, which needs no network and no key.
  */
-import { useEffect, useId, useRef, useState, type FormEvent, type KeyboardEvent } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useId,
+  useRef,
+  useState,
+  type FormEvent,
+  type KeyboardEvent,
+} from 'react';
 import { api } from '../../lib/api.ts';
 import { useAuth } from '../auth/AuthContext.tsx';
 import { Button } from '../../components/ui/Button.tsx';
 import { Icon } from '../../components/ui/Icon.tsx';
 import { cx } from '../../lib/cx.ts';
 import { useExplorer } from '../explorer/ExplorerContext.tsx';
+import { checkPoint } from '../explorer/validation.ts';
 import { useShell } from '../shell/ShellContext.tsx';
 import { Markdown } from './Markdown.tsx';
 import {
@@ -61,7 +70,14 @@ function useHelperContext(): HelperContext {
     points: list ? { curve: list.curve, count: list.count } : null,
     lastResult: state.lastResult,
     tab: state.tab,
+    pointP: checkPoint(curveCheck.curve, state.pointP, 'P').point,
+    pointQ: checkPoint(curveCheck.curve, state.pointQ, 'Q').point,
   };
+}
+
+/** The short note on an answer that the offline helper gave instead of AI mode. */
+function offlineNotice(reason: string | undefined): string {
+  return `${reason ?? 'AI mode is not available.'} Answered by the offline helper.`;
 }
 
 /** The assistant side panel. It stays mounted while closed, so the conversation is kept. */
@@ -86,22 +102,29 @@ export function AssistantPanel() {
     if (open) inputRef.current?.focus();
   }, [open]);
 
-  // Ask the server whether AI mode can be used, whenever the panel opens or the user signs in
-  // or out. Without a server (or on any error) the offline helper is used.
+  /**
+   * Ask the server whether AI mode can be used right now. Without a server (or on any error)
+   * the answer is "no", and the offline helper is used.
+   */
+  const fetchAiStatus = useCallback(async (): Promise<AiStatus> => {
+    try {
+      return await api<AiStatus>('GET', '/api/assistant/status');
+    } catch {
+      return { ai: false, reason: 'AI mode is not available.' };
+    }
+  }, []);
+
+  // Check whenever the panel opens or the user signs in or out, for the header line.
   useEffect(() => {
     if (!open || status !== 'ready') return;
     let canceled = false;
-    api<AiStatus>('GET', '/api/assistant/status')
-      .then((result) => {
-        if (!canceled) setAiStatus(result);
-      })
-      .catch(() => {
-        if (!canceled) setAiStatus({ ai: false, reason: 'AI mode is not available.' });
-      });
+    void fetchAiStatus().then((result) => {
+      if (!canceled) setAiStatus(result);
+    });
     return () => {
       canceled = true;
     };
-  }, [open, status, user]);
+  }, [open, status, user, fetchAiStatus]);
 
   // Keep the newest message in view.
   useEffect(() => {
@@ -125,17 +148,26 @@ export function AssistantPanel() {
     setMessages((current) => [...current, { id: nextId.current++, role: 'user', text: trimmed }]);
     setDraft('');
 
-    if (!aiStatus?.ai) {
-      answerHere(trimmed);
+    setBusy(true);
+    // The status read when the panel opened may be missing or out of date (the question was
+    // asked before it arrived, or the server has changed since). Check again rather than
+    // send the question to the offline helper on old information.
+    let current = aiStatus;
+    if (!current?.ai) {
+      current = await fetchAiStatus();
+      setAiStatus(current);
+    }
+    if (!current.ai) {
+      answerHere(trimmed, offlineNotice(current.reason));
+      setBusy(false);
       return;
     }
-    setBusy(true);
     try {
       const result = await api<{
         answer?: string;
         declined?: boolean;
         fallback?: string;
-        /** A limit at the provider: the offline helper answers with no warning. */
+        /** A limit at the provider: AI mode is off for the rest of this visit to the panel. */
         quiet?: boolean;
         /** AI mode is off for now (the daily cap): the header should say so. */
         aiOff?: boolean;
@@ -159,15 +191,10 @@ export function AssistantPanel() {
         if ((result.quiet || result.aiOff) && result.fallback) {
           setAiStatus({ ai: false, reason: result.fallback });
         }
-        answerHere(
-          trimmed,
-          result.quiet
-            ? undefined
-            : `${result.fallback ?? 'AI mode did not answer.'} Answered by the offline helper.`,
-        );
+        answerHere(trimmed, offlineNotice(result.fallback ?? 'AI mode did not answer.'));
       }
     } catch {
-      answerHere(trimmed, 'AI mode is not reachable right now. Answered by the offline helper.');
+      answerHere(trimmed, offlineNotice('AI mode is not reachable right now.'));
     } finally {
       setBusy(false);
     }

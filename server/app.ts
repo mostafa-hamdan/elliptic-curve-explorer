@@ -34,8 +34,11 @@ export interface BuildAppOptions {
   db: Database;
   /** Folder holding the built website. Defaults to `dist/client`. */
   clientDir?: string;
-  /** Print one log line per request. Off by default so tests stay quiet. */
-  logger?: boolean;
+  /**
+   * Logging: off by default so tests stay quiet. The running server passes { level: 'warn' },
+   * which prints only problems (such as an AI fallback), never one line per request.
+   */
+  logger?: boolean | { level: string };
   /** AI provider to use instead of the real one (tests pass a stand-in). */
   aiProvider?: AssistantProvider | null;
 }
