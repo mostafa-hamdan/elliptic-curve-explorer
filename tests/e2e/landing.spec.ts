@@ -23,7 +23,7 @@ test.describe('landing page', () => {
     await expect(page.getByText('A student project for EECE 632 at AUB')).toBeVisible();
     const team = page.getByTestId('team').locator('li');
     await expect(team).toHaveCount(4);
-    for (const [index, name] of ['Name 1', 'Name 2', 'Name 3', 'Name 4'].entries()) {
+    for (const [index, name] of ['Mostafa', 'Maroun', 'Dimitri', 'Maher'].entries()) {
       await expect(team.nth(index)).toContainText(name);
     }
     await expect(page.getByRole('link', { name: /Open an issue on GitHub/ })).toHaveAttribute(

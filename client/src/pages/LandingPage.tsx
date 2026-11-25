@@ -16,7 +16,7 @@ import { grouped } from '../lib/format.ts';
 import { EXPLORER_PATH, ISSUES_URL, REPO_URL } from '../lib/paths.ts';
 
 /** The team, shown in the About section. */
-export const TEAM: readonly string[] = ['Name 1', 'Name 2', 'Name 3', 'Name 4'];
+export const TEAM: readonly string[] = ['Mostafa', 'Maroun', 'Dimitri', 'Maher'];
 
 /** Sections listed in the in-page menu, in order. */
 const SECTIONS: ReadonlyArray<{ id: string; label: string }> = [

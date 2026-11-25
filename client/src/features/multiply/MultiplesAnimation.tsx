@@ -12,6 +12,90 @@ import { cx } from '../../lib/cx.ts';
 import { grouped, pointText } from '../../lib/format.ts';
 import { SCATTER_MAX_P } from '../points/PointsPlot.tsx';
 
+/** A label to draw next to a dot of the plot, in plot units. */
+export interface PlacedLabel {
+  /** Which multiple (1 for P). */
+  multiple: number;
+  x: number;
+  y: number;
+  anchor: 'start' | 'end';
+}
+
+/**
+ * Place the "kP" labels so that none covers another label or a dot of the walk.
+ *
+ * Each label tries eight places around its dot (above right first) and takes the first one
+ * that stays inside the plot and overlaps nothing placed so far. The current multiple is
+ * placed first, so it always gets the best spot; a label that finds no free place is left
+ * out (the list beside the plot still names every multiple).
+ *
+ * @param dots - the dots of the walk, in order: dots[0] is P. Plot units, y downwards.
+ * @param current - index of the current multiple in `dots`.
+ * @param size - the plot's width and height.
+ * @param dot - the dot radius.
+ * @param fontSize - the label height.
+ * @returns the labels to draw.
+ */
+export function placeLabels(
+  dots: ReadonlyArray<{ cx: number; cy: number }>,
+  current: number,
+  size: number,
+  dot: number,
+  fontSize: number,
+): PlacedLabel[] {
+  type Box = { left: number; top: number; right: number; bottom: number };
+  const overlaps = (a: Box, b: Box) =>
+    a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom;
+  const dotBoxes: Box[] = dots.map(({ cx, cy }) => ({
+    left: cx - dot,
+    top: cy - dot,
+    right: cx + dot,
+    bottom: cy + dot,
+  }));
+  const taken: Box[] = [];
+  const placed: PlacedLabel[] = [];
+  const order = [current, ...dots.map((_, index) => index).filter((index) => index !== current)];
+  const gap = dot * 1.3;
+
+  for (const index of order) {
+    const { cx, cy } = dots[index]!;
+    const text = `${index + 1}P`;
+    const width = text.length * fontSize * 0.62;
+    // Places around the dot: dx and dy move the text's anchor point; "end" puts it left.
+    const candidates: Array<{ dx: number; dy: number; anchor: 'start' | 'end' }> = [
+      { dx: gap, dy: -gap, anchor: 'start' },
+      { dx: gap, dy: gap + fontSize * 0.8, anchor: 'start' },
+      { dx: -gap, dy: -gap, anchor: 'end' },
+      { dx: -gap, dy: gap + fontSize * 0.8, anchor: 'end' },
+      { dx: gap * 1.2, dy: fontSize * 0.35, anchor: 'start' },
+      { dx: -gap * 1.2, dy: fontSize * 0.35, anchor: 'end' },
+      { dx: width / 2, dy: -gap * 1.6, anchor: 'end' },
+      { dx: -width / 2, dy: gap * 1.6 + fontSize * 0.8, anchor: 'start' },
+    ];
+    for (const { dx, dy, anchor } of candidates) {
+      const x = cx + dx;
+      const y = cy + dy;
+      const box: Box = {
+        left: anchor === 'start' ? x : x - width,
+        right: anchor === 'start' ? x + width : x,
+        top: y - fontSize * 0.8,
+        bottom: y + fontSize * 0.2,
+      };
+      const inside = box.left >= 0 && box.right <= size && box.top >= 0 && box.bottom <= size;
+      const free =
+        inside &&
+        !taken.some((other) => overlaps(box, other)) &&
+        !dotBoxes.some((other, other_index) => other_index !== index && overlaps(box, other));
+      if (free) {
+        taken.push(box);
+        placed.push({ multiple: index + 1, x, y, anchor });
+        break;
+      }
+    }
+  }
+  return placed.sort((a, b) => a.multiple - b.multiple);
+}
+
 /** The animation stops after this many multiples if O has not been reached. */
 export const MAX_MULTIPLES = 500;
 
@@ -102,6 +186,19 @@ export function MultiplesAnimation({ curve, point }: MultiplesAnimationProps) {
   // Every dot gets its "kP" label while that stays readable; otherwise only the current one.
   const labelAll = p <= 100 && trail.length <= 40;
   const labelSize = Math.max(0.9, p / 26);
+  // The dots of the walk so far (O has no dot), and their labels placed so none overlap.
+  const walk = multiples
+    .slice(0, shown)
+    .map((value, index) => ({ value, index }))
+    .filter((entry): entry is { value: NonNullable<Point>; index: number } => entry.value !== null);
+  const placedLabels = placeLabels(
+    walk.map((entry) => at(entry.value)),
+    Math.max(0, walk.length - 1),
+    p,
+    dot,
+    labelSize,
+  ).map((label) => ({ ...label, multiple: walk[label.multiple - 1]!.index + 1 }));
+  const labels = placedLabels.filter((label) => labelAll || label.multiple === shown);
 
   return (
     <div className="space-y-4" data-testid="multiples">
@@ -189,28 +286,19 @@ export function MultiplesAnimation({ curve, point }: MultiplesAnimationProps) {
                   strokeWidth={dot * 0.6}
                 />
               )}
-              {multiples.slice(0, shown).map((value, index) => {
-                if (value === null) return null;
-                const isCurrent = index === shown - 1;
-                if (!labelAll && !isCurrent) return null;
-                const position = at(value);
-                // Labels near the right or top edge go on the other side of the dot.
-                const right = position.cx < p * 0.85;
+              {labels.map((label) => {
+                const isCurrent = label.multiple === shown;
                 return (
                   <text
-                    key={`label-${index}`}
-                    x={position.cx + (right ? dot * 1.6 : -dot * 1.6)}
-                    y={
-                      position.cy - dot * 1.2 < labelSize
-                        ? position.cy + labelSize
-                        : position.cy - dot * 1.2
-                    }
-                    textAnchor={right ? 'start' : 'end'}
+                    key={`label-${label.multiple}`}
+                    x={label.x}
+                    y={label.y}
+                    textAnchor={label.anchor}
                     fontSize={labelSize}
                     className={isCurrent ? 'fill-point-r font-semibold' : 'fill-ink-soft'}
                     data-testid="multiples-label"
                   >
-                    {index + 1}P
+                    {label.multiple}P
                   </text>
                 );
               })}

@@ -15,6 +15,7 @@ import {
 import {
   MAX_MULTIPLES,
   multiplesOf,
+  placeLabels,
 } from '../../client/src/features/multiply/MultiplesAnimation.tsx';
 import { clampView, tickStep } from '../../client/src/features/points/PointsPlot.tsx';
 
@@ -120,5 +121,43 @@ describe('multiples of a point', () => {
 
   it('gives order 1 for O itself', () => {
     expect(multiplesOf(E17, null)).toEqual({ multiples: [null], reachedInfinity: true });
+  });
+});
+
+describe('labels of the multiples', () => {
+  /** The box a placed label covers, the same way the placement measures it. */
+  function boxOf(label: { x: number; y: number; anchor: 'start' | 'end'; multiple: number }) {
+    const width = `${label.multiple}P`.length * 0.9 * 0.62;
+    return {
+      left: label.anchor === 'start' ? label.x : label.x - width,
+      right: label.anchor === 'start' ? label.x + width : label.x,
+      top: label.y - 0.9 * 0.8,
+      bottom: label.y + 0.9 * 0.2,
+    };
+  }
+
+  it('never lets two labels overlap, even for neighboring dots such as 6P and 7P on E23(1, 1)', () => {
+    const E23 = createCurve(23n, 1n, 1n);
+    const { multiples } = multiplesOf(E23, { x: 3n, y: 10n });
+    const dots = multiples
+      .filter((value) => value !== null)
+      .map((value) => ({ cx: Number(value!.x) + 0.5, cy: 23 - Number(value!.y) - 0.5 }));
+    for (let shown = 1; shown <= dots.length; shown += 1) {
+      const labels = placeLabels(dots.slice(0, shown), shown - 1, 23, 0.35, 0.9);
+      // The current multiple always has its label.
+      expect(labels.some((label) => label.multiple === shown)).toBe(true);
+      const boxes = labels.map(boxOf);
+      for (let i = 0; i < boxes.length; i += 1) {
+        const a = boxes[i]!;
+        expect(a.left).toBeGreaterThanOrEqual(0);
+        expect(a.right).toBeLessThanOrEqual(23);
+        for (let j = i + 1; j < boxes.length; j += 1) {
+          const b = boxes[j]!;
+          const overlap =
+            a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom;
+          expect(overlap, `${labels[i]!.multiple}P and ${labels[j]!.multiple}P`).toBe(false);
+        }
+      }
+    }
   });
 });

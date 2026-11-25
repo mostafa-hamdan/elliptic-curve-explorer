@@ -10,6 +10,9 @@ import { SCATTER_MAX_P } from '../features/points/PointsPlot.tsx';
 import { grouped } from '../lib/format.ts';
 import { usePageTitle } from '../lib/usePageTitle.ts';
 
+/** The daily AI limit as shipped (the server's AI_DAILY_LIMIT setting can change it). */
+const DEFAULT_DAILY_AI_QUESTIONS = 50;
+
 interface Limitation {
   /** Short name of the limit. */
   title: string;
@@ -102,9 +105,6 @@ const LIMITATIONS: Limitation[] = [
     ),
   },
 ];
-
-/** The daily AI limit as shipped (the server's AI_DAILY_LIMIT setting can change it). */
-const DEFAULT_DAILY_AI_QUESTIONS = 50;
 
 /** The Limitations page. */
 export function LimitationsPage() {
