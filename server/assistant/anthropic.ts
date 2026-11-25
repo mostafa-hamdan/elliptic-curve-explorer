@@ -1,9 +1,11 @@
 /**
  * The assistant's AI mode through Anthropic's Messages API: sends the question with the
- * engine-backed tools, runs the tools the model asks for, and returns the final answer.
+ * engine-backed tools, runs the tools the model asks for, checks the final answer against
+ * their results, and returns it.
  * Used when AI_PROVIDER=anthropic. The key stays on the server.
  */
 import Anthropic from '@anthropic-ai/sdk';
+import { AnswerCheck } from './numberCheck.ts';
 import {
   DECLINED_TEXT,
   finishAnswer,
@@ -37,7 +39,8 @@ export interface AnthropicClient {
  * @param question - the new question.
  * @param context - a short description of the user's current work, if any.
  * @returns the answer text, or a polite refusal.
- * @throws the SDK's errors (network, key, rate limit).
+ * @throws the SDK's errors (network, key, rate limit), or UnverifiedAnswerError when the
+ *         answer fails the number check twice.
  */
 export async function askAnthropic(
   client: AnthropicClient,
@@ -45,6 +48,7 @@ export async function askAnthropic(
   question: string,
   context: string,
 ): Promise<AssistantOutcome> {
+  const check = new AnswerCheck(history, question, context);
   const messages: Anthropic.MessageParam[] = [
     ...history.map((turn): Anthropic.MessageParam => ({ role: turn.role, content: turn.text })),
     { role: 'user', content: questionText(question, context) },
@@ -71,7 +75,12 @@ export async function askAnthropic(
         .filter((block): block is Anthropic.TextBlock => block.type === 'text')
         .map((block) => block.text)
         .join('\n');
-      return finishAnswer(text, response.stop_reason === 'max_tokens');
+      const reminder = check.review(text);
+      if (reminder === null) return finishAnswer(text, response.stop_reason === 'max_tokens');
+      // One more try: keep the model's answer in the exchange and point out what is wrong.
+      messages.push({ role: 'assistant', content: response.content });
+      messages.push({ role: 'user', content: reminder });
+      continue;
     }
 
     // Keep the whole assistant turn (thinking blocks included) and answer every tool call
@@ -79,11 +88,11 @@ export async function askAnthropic(
     messages.push({ role: 'assistant', content: response.content });
     messages.push({
       role: 'user',
-      content: toolCalls.map((call): Anthropic.ToolResultBlockParam => ({
-        type: 'tool_result',
-        tool_use_id: call.id,
-        content: runAssistantTool(call.name, call.input),
-      })),
+      content: toolCalls.map((call): Anthropic.ToolResultBlockParam => {
+        const output = runAssistantTool(call.name, call.input);
+        check.addToolResult(output);
+        return { type: 'tool_result', tool_use_id: call.id, content: output };
+      }),
     });
   }
 

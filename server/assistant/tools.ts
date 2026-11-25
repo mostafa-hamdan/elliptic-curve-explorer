@@ -220,6 +220,8 @@ export function runAssistantTool(name: string, input: unknown): string {
             a: String(curve.a),
             b: String(curve.b),
             singularity: String(singularityValue(curve.p, curve.a, curve.b)),
+            // The unreduced value too, so an answer can quote the whole line of working.
+            singularityWork: `4a³ + 27b² = ${4n * curve.a ** 3n + 27n * curve.b ** 2n} ≡ ${singularityValue(curve.p, curve.a, curve.b)} (mod p)`,
           });
         } catch (error) {
           if (!isEccError(error)) throw error;
@@ -249,6 +251,20 @@ export function runAssistantTool(name: string, input: unknown): string {
           pointFrom(curve, args, 'qx', 'qy'),
         );
         const slope = trace.slope;
+        const P = trace.p;
+        const Q = trace.q;
+        const R = trace.result;
+        // Every intermediate value of the hand method is included, so an answer that writes
+        // out the working can quote each number from here (see numberCheck.ts).
+        const work =
+          slope && P && Q && R && slope.inverse.inverse !== null
+            ? {
+                inverseCheck: `${slope.denominator}·${slope.inverse.inverse} = ${slope.denominator * slope.inverse.inverse} ≡ 1`,
+                lambdaWork: `${slope.numerator}·${slope.inverse.inverse} = ${slope.product} ≡ ${slope.lambda}`,
+                x3Work: `${slope.lambda}² − ${P.x} − ${Q.x} = ${slope.lambda ** 2n} − ${P.x} − ${Q.x} = ${trace.x3Raw} ≡ ${R.x}`,
+                y3Work: `${slope.lambda}·(${P.x} − ${R.x}) − ${P.y} = ${slope.lambda}·(${P.x - R.x}) − ${P.y} = ${slope.lambda * (P.x - R.x)} − ${P.y} = ${trace.y3Raw} ≡ ${R.y}`,
+              }
+            : {};
         return JSON.stringify({
           rule: trace.kind,
           result: show(trace.result),
@@ -266,6 +282,7 @@ export function runAssistantTool(name: string, input: unknown): string {
                 lambda: String(slope.lambda),
                 x3: `${trace.x3Raw} ≡ ${trace.result === null ? '' : trace.result.x}`,
                 y3: `${trace.y3Raw} ≡ ${trace.result === null ? '' : trace.result.y}`,
+                ...work,
               }
             : null,
         });
@@ -310,6 +327,10 @@ export function runAssistantTool(name: string, input: unknown): string {
         return JSON.stringify({
           inverse: trace.inverse === null ? null : String(trace.inverse),
           gcd: String(trace.gcd),
+          check:
+            trace.inverse === null
+              ? null
+              : `${trace.value}·${trace.inverse} = ${trace.value * trace.inverse} ≡ 1 (mod ${modulus})`,
           modulusIsPrime: isPrime(modulus),
           lines: trace.steps
             .slice(0, 30)

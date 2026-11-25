@@ -11,12 +11,17 @@ import {
   DAILY_LIMIT_NOTICE,
   dailyLimitReached,
 } from '../assistant/dailyLimit.ts';
+import { UnverifiedAnswerError } from '../assistant/numberCheck.ts';
 import type { ChatTurn } from '../assistant/run.ts';
 import { describeWait, hitRateLimit } from '../security/rateLimit.ts';
 import { fail, requireAuth } from './shared.ts';
 
 /** AI messages allowed per user per hour. */
 export const AI_MESSAGES_PER_HOUR = 20;
+/** Shown when an AI answer still states values that no tool produced after one reminder. */
+export const UNVERIFIED_NOTICE =
+  'The AI answer contained numbers the engine did not produce, so it was not shown.';
+
 /** Longest question accepted, in characters (the same as the page's limit). */
 export const MAX_QUESTION_LENGTH = 500;
 
@@ -121,6 +126,13 @@ export async function assistantRoutes(app: FastifyInstance): Promise<void> {
         );
         return { answer: outcome.text, declined: outcome.kind === 'declined' };
       } catch (error) {
+        if (error instanceof UnverifiedAnswerError) {
+          request.log.info(
+            { provider: provider.name, values: error.values.length },
+            'AI answer failed the number check twice; the offline helper answers',
+          );
+          return { fallback: UNVERIFIED_NOTICE };
+        }
         const failure = provider.explainFailure(error);
         // Only the status and code are logged: an SDK error object also carries headers.
         const { status, code } = error as { status?: unknown; code?: unknown };
