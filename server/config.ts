@@ -24,6 +24,8 @@ export interface ServerConfig {
   openaiApiKey: string | undefined;
   /** The OpenAI model. */
   openaiModel: string;
+  /** The OpenAI reasoning effort, or null to leave it to the model. */
+  openaiReasoningEffort: string | null;
   /** AI questions allowed per UTC day across all users; 0 turns AI mode off. */
   aiDailyLimit: number;
   /** New accounts allowed per network address per hour. */
@@ -64,6 +66,19 @@ function aiDailyLimitSetting(): number {
   return Number.isSafeInteger(value) ? value : DEFAULT_AI_DAILY_LIMIT;
 }
 
+/**
+ * Read OPENAI_REASONING_EFFORT. Any single word is passed on, so a value a future model
+ * introduces works without a code change; a value the model refuses is dropped at the first
+ * request (see openai.ts). "default" leaves the choice to the model.
+ *
+ * @returns the effort ("low" when the setting is empty or not a single word), or null.
+ */
+function reasoningEffortSetting(): string | null {
+  const value = optionalEnv('OPENAI_REASONING_EFFORT')?.toLowerCase();
+  if (value === 'default') return null;
+  return value !== undefined && /^[a-z]{1,20}$/.test(value) ? value : 'low';
+}
+
 /** Shortest acceptable session secret (32 characters of base64 is 192 bits). */
 const MIN_SECRET_LENGTH = 32;
 
@@ -86,7 +101,8 @@ export function loadConfig(): ServerConfig {
     aiProvider: aiProviderSetting(),
     anthropicApiKey: optionalEnv('ANTHROPIC_API_KEY'),
     openaiApiKey: optionalEnv('OPENAI_API_KEY'),
-    openaiModel: optionalEnv('OPENAI_MODEL') ?? 'gpt-5-mini',
+    openaiModel: optionalEnv('OPENAI_MODEL') ?? 'gpt-6-luna',
+    openaiReasoningEffort: reasoningEffortSetting(),
     aiDailyLimit: aiDailyLimitSetting(),
     signupsPerHour: numberSetting('SIGNUPS_PER_HOUR', 10),
     signinsPerWindow: numberSetting('SIGNINS_PER_IP', 30),

@@ -1,9 +1,11 @@
 /**
  * The assistant's AI mode through OpenAI: every request is POST /v1/responses (the Responses
- * API) with function calling. It runs the engine-backed tools the model asks for and
- * returns the final answer. Used when AI_PROVIDER=openai. The key stays on the server.
+ * API) with function calling. It runs the engine-backed tools the model asks for, checks
+ * the final answer against their results, and returns it. Used when AI_PROVIDER=openai.
+ * The key stays on the server.
  */
 import OpenAI from 'openai';
+import { AnswerCheck } from './numberCheck.ts';
 import {
   DECLINED_TEXT,
   finishAnswer,
@@ -20,7 +22,9 @@ import {
 import { openAiTools, runAssistantTool } from './tools.ts';
 
 /** The model used unless OPENAI_MODEL says otherwise. */
-export const DEFAULT_OPENAI_MODEL = 'gpt-5-mini';
+export const DEFAULT_OPENAI_MODEL = 'gpt-6-luna';
+/** The reasoning effort used unless OPENAI_REASONING_EFFORT says otherwise. */
+export const DEFAULT_REASONING_EFFORT = 'low';
 
 /**
  * The API address, set explicitly: otherwise the SDK would obey an OPENAI_BASE_URL variable
@@ -49,6 +53,19 @@ export interface OpenAiClient {
       params: OpenAI.Responses.ResponseCreateParamsNonStreaming,
     ): Promise<OpenAI.Responses.Response>;
   };
+}
+
+/** How the model is called. */
+export interface OpenAiSettings {
+  /** The model name. */
+  model: string;
+  /**
+   * The reasoning effort, or null to leave it to the model. Set to null for good, by
+   * {@link askOpenAi}, when the model refuses the configured value.
+   */
+  effort: string | null;
+  /** Told once when the model refused the effort setting (prints a line on the server). */
+  onEffortRejected?: (effort: string) => void;
 }
 
 /** A response the API delivered with the status "failed" instead of an HTTP error. */
@@ -89,26 +106,75 @@ function parseArguments(text: string): unknown {
 }
 
 /**
+ * Did the API refuse the reasoning effort (for example a value a newer model dropped)?
+ *
+ * @param error - what the SDK threw.
+ * @returns true for a 400 error that names the reasoning setting.
+ */
+export function effortWasRejected(error: unknown): boolean {
+  if (!(error instanceof OpenAI.APIError) || error.status !== 400) return false;
+  return (
+    error.param === 'reasoning.effort' ||
+    error.param === 'reasoning' ||
+    /reasoning[._ ]effort/i.test(error.message)
+  );
+}
+
+/**
+ * Send one request. If the model refuses the reasoning effort, send it once more without
+ * the setting, and leave it out for every later request too.
+ *
+ * @param client - the API client.
+ * @param settings - model and effort; `effort` becomes null after a refusal.
+ * @param params - the request without the model and the effort.
+ * @returns the response.
+ * @throws the SDK's errors.
+ */
+async function createResponse(
+  client: OpenAiClient,
+  settings: OpenAiSettings,
+  params: Omit<OpenAI.Responses.ResponseCreateParamsNonStreaming, 'model' | 'reasoning'>,
+): Promise<OpenAI.Responses.Response> {
+  const effort = settings.effort;
+  const base = { ...params, model: settings.model };
+  if (effort === null) return client.responses.create(base);
+  try {
+    return await client.responses.create({
+      ...base,
+      reasoning: { effort: effort as OpenAI.ReasoningEffort },
+    });
+  } catch (error) {
+    if (!effortWasRejected(error)) throw error;
+    settings.effort = null;
+    settings.onEffortRejected?.(effort);
+    return client.responses.create(base);
+  }
+}
+
+/**
  * Answer one question through the Responses API.
  *
  * Nothing is stored at OpenAI between turns (`store: false`), so each request carries the
- * whole exchange, including the model's reasoning items from the previous tool call.
+ * whole exchange, including the model's reasoning items from the previous tool call. The
+ * final answer must pass {@link AnswerCheck}; the model gets one reminder to fix it.
  *
  * @param client - the API client (or a stand-in in tests).
- * @param model - the model name.
+ * @param settings - model and reasoning effort.
  * @param history - earlier turns, oldest first, as plain text.
  * @param question - the new question.
  * @param context - a short description of the user's current work, if any.
  * @returns the answer text, or a polite refusal.
- * @throws the SDK's errors, or {@link OpenAiResponseError} for a failed response.
+ * @throws the SDK's errors, {@link OpenAiResponseError} for a failed response, or
+ *         UnverifiedAnswerError when the answer fails the number check twice.
  */
 export async function askOpenAi(
   client: OpenAiClient,
-  model: string,
+  settings: OpenAiSettings,
   history: ChatTurn[],
   question: string,
   context: string,
 ): Promise<AssistantOutcome> {
+  const check = new AnswerCheck(history, question, context);
   const input: OpenAI.Responses.ResponseInputItem[] = [
     ...history.map((turn): OpenAI.Responses.EasyInputMessage => ({
       role: turn.role,
@@ -118,12 +184,10 @@ export async function askOpenAi(
   ];
 
   for (let round = 0; round <= MAX_TOOL_ROUNDS; round += 1) {
-    const response = await client.responses.create({
-      model,
+    const response = await createResponse(client, settings, {
       instructions: SYSTEM_PROMPT,
       input,
       tools: openAiTools(),
-      reasoning: { effort: 'minimal' },
       max_output_tokens: MAX_OUTPUT_TOKENS,
       store: false,
       include: ['reasoning.encrypted_content'],
@@ -147,17 +211,22 @@ export async function askOpenAi(
       const text = parts
         .flatMap((part) => (part.type === 'output_text' ? [part.text] : []))
         .join('\n');
-      return finishAnswer(text, response.incomplete_details?.reason === 'max_output_tokens');
+      const reminder = check.review(text);
+      if (reminder === null) {
+        return finishAnswer(text, response.incomplete_details?.reason === 'max_output_tokens');
+      }
+      // One more try: keep the model's answer in the exchange and point out what is wrong.
+      input.push(...response.output.filter(isReplayItem));
+      input.push({ role: 'user', content: reminder });
+      continue;
     }
 
     // Send back what the model produced, then one output for each of its tool calls.
     input.push(...response.output.filter(isReplayItem));
     for (const call of toolCalls) {
-      input.push({
-        type: 'function_call_output',
-        call_id: call.call_id,
-        output: runAssistantTool(call.name, parseArguments(call.arguments)),
-      });
+      const output = runAssistantTool(call.name, parseArguments(call.arguments));
+      check.addToolResult(output);
+      input.push({ type: 'function_call_output', call_id: call.call_id, output });
     }
   }
 
@@ -202,17 +271,23 @@ export function explainOpenAiFailure(error: unknown): FailureNotice {
  * Wrap a client as an assistant provider.
  *
  * @param client - the API client (or a stand-in in tests).
- * @param model - the model name.
+ * @param options - model and reasoning effort; `null` effort leaves it to the model.
  * @returns the provider.
  */
 export function openAiProvider(
   client: OpenAiClient,
-  model: string = DEFAULT_OPENAI_MODEL,
+  options: Partial<OpenAiSettings> = {},
 ): AssistantProvider {
+  // One settings object for the life of the server, so a refused effort is dropped once.
+  const settings: OpenAiSettings = {
+    model: options.model ?? DEFAULT_OPENAI_MODEL,
+    effort: options.effort === undefined ? DEFAULT_REASONING_EFFORT : options.effort,
+    ...(options.onEffortRejected ? { onEffortRejected: options.onEffortRejected } : {}),
+  };
   return {
     name: 'OpenAI',
-    model,
-    ask: (history, question, context) => askOpenAi(client, model, history, question, context),
+    model: settings.model,
+    ask: (history, question, context) => askOpenAi(client, settings, history, question, context),
     explainFailure: explainOpenAiFailure,
   };
 }

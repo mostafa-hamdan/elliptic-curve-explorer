@@ -39,7 +39,14 @@ export function createAssistantProvider(config: ServerConfig): AssistantProvider
         maxRetries: 0,
         timeout: REQUEST_TIMEOUT_MS,
       }),
-      config.openaiModel,
+      {
+        model: config.openaiModel,
+        effort: config.openaiReasoningEffort,
+        onEffortRejected: (effort) =>
+          console.warn(
+            `OpenAI refused OPENAI_REASONING_EFFORT=${effort} for ${config.openaiModel}; the model's own default is used instead. Change the line in .env.`,
+          ),
+      },
     );
   }
   return null;
@@ -61,6 +68,6 @@ export function describeAiSetup(config: ServerConfig): string {
       : 'The assistant uses its offline helper (no ANTHROPIC_API_KEY in .env).';
   }
   return config.openaiApiKey
-    ? `The assistant's AI mode sends questions to OpenAI, model ${config.openaiModel} (at most ${config.aiDailyLimit} a day).`
+    ? `The assistant's AI mode sends questions to OpenAI, model ${config.openaiModel}, reasoning effort ${config.openaiReasoningEffort ?? 'the model default'} (at most ${config.aiDailyLimit} a day).`
     : 'The assistant uses its offline helper (no OPENAI_API_KEY in .env).';
 }

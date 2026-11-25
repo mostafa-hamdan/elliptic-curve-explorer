@@ -237,13 +237,13 @@ describe.each(PROVIDERS)('the same rules with %s', (name, build) => {
 });
 
 describe('OpenAI requests', () => {
-  it('uses the model, minimum effort, the scope prompt, six strict tools and no storage', async () => {
+  it('uses the model, low effort, the scope prompt, six strict tools and no storage', async () => {
     const { provider, requests } = scriptedOpenAi([{ text: 'ok' }]);
     const browser = await signedIn(provider);
     await browser.request('POST', '/api/assistant', { ...ASK, context: 'Curve E23(1, 1)' });
     const request = requests[0]!;
-    expect(request.model).toBe('gpt-5-mini');
-    expect(request.reasoning).toEqual({ effort: 'minimal' });
+    expect(request.model).toBe('gpt-6-luna');
+    expect(request.reasoning).toEqual({ effort: 'low' });
     expect(request.instructions).toBe(SYSTEM_PROMPT);
     expect(request.store).toBe(false);
     expect(request.tools).toHaveLength(6);
@@ -393,7 +393,7 @@ describe('the real OpenAI SDK against a fake network', () => {
       'POST https://api.openai.com/v1/responses',
       'POST https://api.openai.com/v1/responses',
     ]);
-    expect(calls[0]!.body.reasoning).toEqual({ effort: 'minimal' });
+    expect(calls[0]!.body.reasoning).toEqual({ effort: 'low' });
   });
 
   it('classifies a real budget error as quiet', async () => {
@@ -507,16 +507,18 @@ describe('the provider setting', () => {
       'OPENAI_MODEL',
       'ANTHROPIC_API_KEY',
       'AI_DAILY_LIMIT',
+      'OPENAI_REASONING_EFFORT',
     ]) {
       vi.stubEnv(name, env[name] ?? '');
     }
     return loadConfig();
   }
 
-  it('defaults to OpenAI, gpt-5-mini and 50 questions a day', () => {
+  it('defaults to OpenAI, gpt-6-luna, low effort and 50 questions a day', () => {
     expect(configFrom({})).toMatchObject({
       aiProvider: 'openai',
-      openaiModel: 'gpt-5-mini',
+      openaiModel: 'gpt-6-luna',
+      openaiReasoningEffort: 'low',
       aiDailyLimit: 50,
     });
   });
@@ -565,7 +567,7 @@ describe('the provider setting', () => {
       openaiApiKey: 'do-not-print-this',
     });
     expect(message).toContain('OpenAI');
-    expect(message).toContain('gpt-5-mini');
+    expect(message).toContain('gpt-6-luna');
     expect(message).not.toContain('do-not-print-this');
     expect(describeAiSetup(TEST_CONFIG)).toContain('no OPENAI_API_KEY');
   });

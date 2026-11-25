@@ -310,17 +310,17 @@ test.describe('assistant (AI mode, with the server answers simulated)', () => {
   test('names the provider that receives the questions', async ({ page }) => {
     await page.route('**/api/assistant/status', (route) =>
       route.fulfill({
-        json: { ai: true, reason: 'AI mode is ready.', provider: 'OpenAI', model: 'gpt-5-mini' },
+        json: { ai: true, reason: 'AI mode is ready.', provider: 'OpenAI', model: 'gpt-6-luna' },
       }),
     );
     await openExplorer(page);
     await page.getByRole('button', { name: 'Assistant' }).click();
     await expect(page.getByTestId('assistant-mode')).toHaveText(
-      'AI mode · OpenAI gpt-5-mini, numbers from the engine',
+      'AI mode · OpenAI gpt-6-luna, numbers from the engine',
     );
     await page.goto('/security');
     await expect(page.getByTestId('ai-provider-note')).toHaveText(
-      'On this server, questions go to OpenAI (gpt-5-mini).',
+      'On this server, questions go to OpenAI (gpt-6-luna).',
     );
   });
 
