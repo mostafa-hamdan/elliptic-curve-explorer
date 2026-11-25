@@ -15,6 +15,8 @@ export default tseslint.config(
       'playwright-report/**',
       'test-results/**',
       'coverage/**',
+      '.vercel/**',
+      'review-screens/**',
     ],
   },
   js.configs.recommended,
