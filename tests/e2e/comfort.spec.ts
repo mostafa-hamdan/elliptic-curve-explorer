@@ -418,3 +418,54 @@ test.describe('assistant (AI mode, with the server answers simulated)', () => {
     await expect(panel.getByTestId('assistant-mode')).toHaveText(`Offline helper · ${notice}`);
   });
 });
+
+test.describe('assistant panel width', () => {
+  test('drag the edge, use the keys or the button; the width is remembered', async ({ page }) => {
+    await openExplorer(page);
+    await page.getByRole('button', { name: 'Assistant' }).click();
+    const panel = page.getByTestId('assistant');
+    const width = async () => Math.round((await panel.boundingBox())!.width);
+    expect(await width()).toBe(420);
+
+    // Drag the left edge 200 pixels to the left.
+    const handle = page.getByTestId('assistant-resize');
+    const box = (await handle.boundingBox())!;
+    await page.mouse.move(box.x + box.width / 2, box.y + 200);
+    await page.mouse.down();
+    await page.mouse.move(box.x + box.width / 2 - 200, box.y + 200, { steps: 8 });
+    await page.mouse.up();
+    expect(Math.abs((await width()) - 620)).toBeLessThanOrEqual(3);
+
+    // The arrow keys on the focused edge change it in steps.
+    await handle.focus();
+    const before = await width();
+    await page.keyboard.press('ArrowRight');
+    expect(await width()).toBe(before - 24);
+
+    // The button switches between wide and normal.
+    await page.getByRole('button', { name: 'Make the assistant wider' }).click();
+    expect(await width()).toBe(720);
+    await page.reload();
+    await page.getByRole('button', { name: 'Assistant' }).click();
+    expect(await width()).toBe(720);
+    await page.getByRole('button', { name: 'Make the assistant narrower' }).click();
+    expect(await width()).toBe(420);
+
+    // Never narrower than 320 pixels, never wider than the window minus a margin.
+    await handle.focus();
+    await page.keyboard.press('Home');
+    expect(await width()).toBe(320);
+    await page.keyboard.press('End');
+    expect(await width()).toBe(1366 - 80);
+  });
+
+  test('fills a small screen, with nothing to resize', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await openExplorer(page);
+    await page.getByRole('button', { name: 'Assistant' }).click();
+    const panel = page.getByTestId('assistant');
+    expect(Math.round((await panel.boundingBox())!.width)).toBe(390);
+    await expect(page.getByTestId('assistant-resize')).toHaveCount(0);
+    await expect(page.getByTestId('assistant-expand')).toHaveCount(0);
+  });
+});

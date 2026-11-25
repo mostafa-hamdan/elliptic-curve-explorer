@@ -52,6 +52,8 @@ const ICON_PATHS = {
   zoomOut: 'M11 3a8 8 0 1 0 0 16 8 8 0 0 0 0-16ZM21 21l-4.35-4.35M8 11h6',
   pause: 'M6 4h4v16H6ZM14 4h4v16h-4Z',
   skipForward: 'M5 4l10 8-10 8V4ZM19 5v14',
+  expand: 'M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7',
+  collapse: 'M4 14h6v6M20 10h-6V4M14 10l7-7M3 21l7-7',
   sparkle:
     'M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9ZM19 15l.9 2.1L22 18l-2.1.9L19 21l-.9-2.1L16 18l2.1-.9Z',
 } as const;

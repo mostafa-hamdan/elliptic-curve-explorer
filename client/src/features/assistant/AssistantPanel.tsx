@@ -13,6 +13,7 @@ import {
   useState,
   type FormEvent,
   type KeyboardEvent,
+  type PointerEvent as ReactPointerEvent,
 } from 'react';
 import { api } from '../../lib/api.ts';
 import { useAuth } from '../auth/AuthContext.tsx';
@@ -29,6 +30,7 @@ import {
   SUGGESTIONS,
   type HelperContext,
 } from './offlineHelper.ts';
+import { PANEL_MIN_WIDTH, usePanelWidth } from './panelWidth.ts';
 import { describeWork } from './workContext.ts';
 
 /** One message in the conversation. */
@@ -88,6 +90,7 @@ export function AssistantPanel() {
   const { state } = useExplorer();
   const { status, user } = useAuth();
   const [aiStatus, setAiStatus] = useState<AiStatus | null>(null);
+  const panelWidth = usePanelWidth();
   const [busy, setBusy] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [draft, setDraft] = useState('');
@@ -213,6 +216,43 @@ export function AssistantPanel() {
     }
   }
 
+  /** Follow the pointer while the edge is dragged; remember the width when it is let go. */
+  function startDrag(event: ReactPointerEvent<HTMLDivElement>) {
+    event.preventDefault();
+    const handle = event.currentTarget;
+    handle.setPointerCapture(event.pointerId);
+    let latest = panelWidth.width;
+    const move = (moveEvent: PointerEvent) => {
+      // The panel sits against the right edge, so its width is the distance to that edge.
+      latest = window.innerWidth - moveEvent.clientX;
+      panelWidth.preview(latest);
+    };
+    const stop = () => {
+      handle.removeEventListener('pointermove', move);
+      handle.removeEventListener('pointerup', stop);
+      handle.removeEventListener('pointercancel', stop);
+      panelWidth.commit(latest);
+    };
+    handle.addEventListener('pointermove', move);
+    handle.addEventListener('pointerup', stop);
+    handle.addEventListener('pointercancel', stop);
+  }
+
+  /** Left and right arrows widen and narrow the panel; Home and End go to the limits. */
+  function resizeWithKeys(event: KeyboardEvent<HTMLDivElement>) {
+    const step = event.shiftKey ? 80 : 24;
+    const changes: Record<string, number> = {
+      ArrowLeft: panelWidth.width + step,
+      ArrowRight: panelWidth.width - step,
+      Home: PANEL_MIN_WIDTH,
+      End: window.innerWidth,
+    };
+    const next = changes[event.key];
+    if (next === undefined) return;
+    event.preventDefault();
+    panelWidth.commit(next);
+  }
+
   const aiOn = aiStatus?.ai === true;
 
   const tooLong = draft.length > MAX_QUESTION_LENGTH;
@@ -230,8 +270,28 @@ export function AssistantPanel() {
           closePanel();
         }
       }}
-      className="fixed top-14 right-0 bottom-0 z-40 flex w-full max-w-[420px] flex-col border-l border-line bg-surface shadow-pop print:hidden"
+      className="fixed top-14 right-0 bottom-0 z-40 flex w-full max-w-full flex-col border-l border-line bg-surface shadow-pop print:hidden"
+      style={panelWidth.fullScreen ? undefined : { width: panelWidth.width }}
     >
+      {!panelWidth.fullScreen && (
+        // The left edge: drag it, or focus it and use the arrow keys, to change the width.
+        <div
+          role="separator"
+          aria-orientation="vertical"
+          aria-label="Resize the assistant"
+          aria-valuemin={PANEL_MIN_WIDTH}
+          aria-valuemax={Math.max(PANEL_MIN_WIDTH, window.innerWidth - 80)}
+          aria-valuenow={panelWidth.width}
+          tabIndex={0}
+          title="Drag to resize"
+          data-testid="assistant-resize"
+          onPointerDown={startDrag}
+          onKeyDown={resizeWithKeys}
+          className="group absolute top-0 bottom-0 -left-1.5 z-10 w-3 cursor-col-resize touch-none outline-none"
+        >
+          <span className="absolute top-0 bottom-0 left-1/2 w-0.5 -translate-x-1/2 bg-transparent transition-colors group-hover:bg-primary/60 group-focus-visible:bg-primary" />
+        </div>
+      )}
       <div className="flex items-center justify-between gap-3 border-b border-line px-4 py-3">
         <div className="flex min-w-0 items-center gap-2">
           <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary-soft text-primary">
@@ -253,6 +313,20 @@ export function AssistantPanel() {
             <Button variant="ghost" size="sm" onClick={() => setMessages([])}>
               Clear
             </Button>
+          )}
+          {!panelWidth.fullScreen && (
+            <button
+              type="button"
+              onClick={panelWidth.toggleWide}
+              aria-label={
+                panelWidth.wide ? 'Make the assistant narrower' : 'Make the assistant wider'
+              }
+              title={panelWidth.wide ? 'Make the assistant narrower' : 'Make the assistant wider'}
+              data-testid="assistant-expand"
+              className="inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg text-ink-soft transition-colors hover:bg-sunken hover:text-ink"
+            >
+              <Icon name={panelWidth.wide ? 'collapse' : 'expand'} size={16} />
+            </button>
           )}
           <button
             type="button"
