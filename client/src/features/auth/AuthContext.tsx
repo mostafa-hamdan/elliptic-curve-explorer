@@ -17,6 +17,8 @@ export interface PublicUser {
   email: string;
   twoFactor: boolean;
   createdAt: number;
+  /** True for the shared demo account on the hosted site, whose security cannot be changed. */
+  sharedDemo?: boolean;
 }
 
 /** One calculation for the history. */

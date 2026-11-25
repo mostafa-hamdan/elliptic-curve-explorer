@@ -28,6 +28,8 @@ export interface ServerConfig {
   openaiReasoningEffort: string | null;
   /** AI questions allowed per UTC day across all users; 0 turns AI mode off. */
   aiDailyLimit: number;
+  /** Protect the shared demo account from security changes (on when hosted). */
+  demoLocked: boolean;
   /** New accounts allowed per network address per hour. */
   signupsPerHour: number;
   /** Sign-in attempts allowed per network address per 15 minutes. */
@@ -104,6 +106,7 @@ export function loadConfig(): ServerConfig {
     openaiModel: optionalEnv('OPENAI_MODEL') ?? 'gpt-6-luna',
     openaiReasoningEffort: reasoningEffortSetting(),
     aiDailyLimit: aiDailyLimitSetting(),
+    demoLocked: optionalEnv('HOSTED') === '1' || optionalEnv('DEMO_ACCOUNT_LOCKED') === '1',
     signupsPerHour: numberSetting('SIGNUPS_PER_HOUR', 10),
     signinsPerWindow: numberSetting('SIGNINS_PER_IP', 30),
   };

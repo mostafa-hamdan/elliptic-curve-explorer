@@ -19,6 +19,7 @@ export const TEST_CONFIG: ServerConfig = {
   openaiModel: 'gpt-6-luna',
   openaiReasoningEffort: 'low',
   aiDailyLimit: 50,
+  demoLocked: false,
   signupsPerHour: 10,
   signinsPerWindow: 30,
 };

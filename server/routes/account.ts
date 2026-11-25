@@ -16,6 +16,7 @@ import {
 } from '../db/schema.ts';
 import { cookieOptions, issueCsrfToken, SESSION_COOKIE } from '../auth/sessions.ts';
 import { confirmIdentity } from '../auth/confirm.ts';
+import { isLockedDemo, refuseDemoChange } from '../demo.ts';
 import { codeSchema, fail, passwordSchema, requireAuth } from './shared.ts';
 
 /** How many security events the Security center shows. */
@@ -33,8 +34,12 @@ export async function accountRoutes(app: FastifyInstance): Promise<void> {
       .from(sessions)
       .where(eq(sessions.userId, auth.user.id))
       .orderBy(desc(sessions.lastSeenAt));
+    // Visitors who share the demo account see only their own browser, not each other's.
+    const shown = isLockedDemo(config, auth.user.email)
+      ? rows.filter((row) => row.tokenHash === auth.tokenHash)
+      : rows;
     return {
-      sessions: rows.map((row) => ({
+      sessions: shown.map((row) => ({
         id: row.publicId,
         device: row.device,
         createdAt: row.createdAt,
@@ -60,6 +65,19 @@ export async function accountRoutes(app: FastifyInstance): Promise<void> {
     async (request, reply) => {
       const auth = requireAuth(request, reply);
       if (!auth) return reply;
+      // On the shared demo account a visitor may end only their own session.
+      if (isLockedDemo(config, auth.user.email)) {
+        const own = await db
+          .select({ tokenHash: sessions.tokenHash })
+          .from(sessions)
+          .where(eq(sessions.publicId, request.params.id));
+        if (
+          own[0]?.tokenHash !== auth.tokenHash &&
+          refuseDemoChange(config, reply, auth.user.email)
+        ) {
+          return reply;
+        }
+      }
       // The user id in the condition means one account can never end another's session.
       const removed = await db
         .delete(sessions)
@@ -101,6 +119,7 @@ export async function accountRoutes(app: FastifyInstance): Promise<void> {
       const auth = requireAuth(request, reply);
       if (!auth) return reply;
       const user = auth.user;
+      if (refuseDemoChange(config, reply, user.email)) return reply;
       if (!(await confirmIdentity(app, reply, user, request.body.password, request.body.code))) {
         return reply;
       }

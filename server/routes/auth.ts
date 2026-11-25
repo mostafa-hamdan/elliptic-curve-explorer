@@ -19,6 +19,7 @@ import {
   type User,
 } from '../auth/sessions.ts';
 import { checkSecondFactor, confirmIdentity, useRecoveryCode } from '../auth/confirm.ts';
+import { isLockedDemo, refuseDemoChange } from '../demo.ts';
 import { open, seal } from '../security/crypto.ts';
 import { getDecoyHash, hashPassword, verifyPassword } from '../security/passwords.ts';
 import {
@@ -27,6 +28,7 @@ import {
   hitRateLimit,
   rateLimitBlocked,
 } from '../security/rateLimit.ts';
+import { clientAddress } from '../security/clientAddress.ts';
 import { checkTotp, createTotpSecret } from '../security/totp.ts';
 import {
   codeSchema,
@@ -46,9 +48,19 @@ const FAILURES_PER_ACCOUNT = 5;
 /** One message for an unknown email and a wrong password, so neither is revealed. */
 const WRONG_CREDENTIALS = 'Wrong email or password.';
 
-/** The public view of an account, sent to the browser. Never includes any secret. */
-export function publicUser(user: User) {
-  return { email: user.email, twoFactor: user.totpSecret !== null, createdAt: user.createdAt };
+/**
+ * The public view of an account, sent to the browser. Never includes any secret.
+ *
+ * @param user - the account.
+ * @param demoLocked - true for the shared demo account on the hosted site.
+ */
+export function publicUser(user: User, demoLocked = false) {
+  return {
+    email: user.email,
+    twoFactor: user.totpSecret !== null,
+    createdAt: user.createdAt,
+    ...(demoLocked ? { sharedDemo: true } : {}),
+  };
 }
 
 const userSchema = {
@@ -57,6 +69,7 @@ const userSchema = {
     email: { type: 'string' },
     twoFactor: { type: 'boolean' },
     createdAt: { type: 'number' },
+    sharedDemo: { type: 'boolean' },
   },
   required: ['email', 'twoFactor', 'createdAt'],
   additionalProperties: false,
@@ -112,7 +125,7 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
       const csrfToken = request.cookies[CSRF_COOKIE] || issueCsrfToken(config, reply);
       const user = request.auth?.user ?? null;
       return {
-        user: user ? publicUser(user) : null,
+        user: user ? publicUser(user, isLockedDemo(config, user.email)) : null,
         csrfToken,
         recoveryCodesLeft: user ? await codesLeft(app, user.id) : null,
       };
@@ -134,7 +147,7 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
     async (request, reply) => {
       const limit = await hitRateLimit(
         db,
-        `signup-ip:${request.ip}`,
+        `signup-ip:${clientAddress(request, config.hosted)}`,
         config.signupsPerHour,
         60 * 60 * 1000,
       );
@@ -187,7 +200,7 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
 
       const network = await hitRateLimit(
         db,
-        `signin-ip:${request.ip}`,
+        `signin-ip:${clientAddress(request, config.hosted)}`,
         config.signinsPerWindow,
         WINDOW_MS,
       );
@@ -200,7 +213,12 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
       }
       // A locked account (known or not, so locking reveals nothing) is checked before the
       // password, so guessing stops while it is locked.
-      const locked = await rateLimitBlocked(db, accountKey, FAILURES_PER_ACCOUNT, WINDOW_MS);
+      // The hosted demo account's password is public, so locking it would only let one
+      // visitor lock out every other; the per-address limit above still applies to it.
+      const lockable = !isLockedDemo(config, email);
+      const locked = lockable
+        ? await rateLimitBlocked(db, accountKey, FAILURES_PER_ACCOUNT, WINDOW_MS)
+        : null;
       if (locked !== null) {
         return fail(
           reply,
@@ -217,7 +235,7 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
         request.body.password,
       );
       if (!user || !passwordOk) {
-        await hitRateLimit(db, accountKey, Number.MAX_SAFE_INTEGER, WINDOW_MS);
+        if (lockable) await hitRateLimit(db, accountKey, Number.MAX_SAFE_INTEGER, WINDOW_MS);
         return fail(reply, 401, WRONG_CREDENTIALS);
       }
 
@@ -239,7 +257,11 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
 
       await clearRateLimit(db, accountKey);
       const csrfToken = await startSession(db, config, request, reply, user.id);
-      return { status: 'signed-in', user: publicUser(user), csrfToken };
+      return {
+        status: 'signed-in',
+        user: publicUser(user, isLockedDemo(config, user.email)),
+        csrfToken,
+      };
     },
   );
 
@@ -251,6 +273,8 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
   app.post('/api/auth/signout-all', async (request, reply) => {
     const auth = requireAuth(request, reply);
     if (!auth) return reply;
+    // On the demo account this would sign out every other visitor.
+    if (refuseDemoChange(config, reply, auth.user.email)) return reply;
     await db.delete(sessions).where(eq(sessions.userId, auth.user.id));
     await logActivity(app, request, auth.user.id, 'Signed out of all devices');
     reply.clearCookie(SESSION_COOKIE, cookieOptions(config, 0));
@@ -271,7 +295,13 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
     },
     async (request, reply) => {
       const email = normalizeEmail(request.body.email);
-      const network = await hitRateLimit(db, `recover-ip:${request.ip}`, 10, WINDOW_MS);
+      if (refuseDemoChange(config, reply, email)) return reply;
+      const network = await hitRateLimit(
+        db,
+        `recover-ip:${clientAddress(request, config.hosted)}`,
+        10,
+        WINDOW_MS,
+      );
       const account = await hitRateLimit(db, `recover-account:${email}`, 5, WINDOW_MS);
       if (!network.allowed || !account.allowed) {
         const wait = Math.max(network.retryAfterMs, account.retryAfterMs);
@@ -321,6 +351,7 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
     async (request, reply) => {
       const auth = requireAuth(request, reply);
       if (!auth) return reply;
+      if (refuseDemoChange(config, reply, auth.user.email)) return reply;
       const check = checkPassword(request.body.newPassword, auth.user.email);
       if (check.problem) return fail(reply, 400, check.problem);
       if (
@@ -354,6 +385,7 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
   app.post('/api/auth/2fa/setup', async (request, reply) => {
     const auth = requireAuth(request, reply);
     if (!auth) return reply;
+    if (refuseDemoChange(config, reply, auth.user.email)) return reply;
     if (auth.user.totpSecret) return fail(reply, 400, 'Two-factor authentication is already on.');
     const setup = await createTotpSecret(auth.user.email);
     await db
@@ -378,6 +410,7 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
     async (request, reply) => {
       const auth = requireAuth(request, reply);
       if (!auth) return reply;
+      if (refuseDemoChange(config, reply, auth.user.email)) return reply;
       const pending = auth.user.totpPending;
       if (!pending)
         return fail(
@@ -413,6 +446,7 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
     async (request, reply) => {
       const auth = requireAuth(request, reply);
       if (!auth) return reply;
+      if (refuseDemoChange(config, reply, auth.user.email)) return reply;
       if (!auth.user.totpSecret)
         return fail(reply, 400, 'Two-factor authentication is already off.');
       if (
@@ -444,6 +478,7 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
     async (request, reply) => {
       const auth = requireAuth(request, reply);
       if (!auth) return reply;
+      if (refuseDemoChange(config, reply, auth.user.email)) return reply;
       if (
         !(await confirmIdentity(app, reply, auth.user, request.body.password, request.body.code))
       ) {

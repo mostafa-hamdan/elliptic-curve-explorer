@@ -603,6 +603,23 @@ function DeleteSection() {
 
 /** The whole Security center. */
 export function SecurityCenter() {
+  const { user } = useAuth();
+  if (user?.sharedDemo) {
+    // Every visitor shares the hosted demo account, so its security cannot be changed.
+    return (
+      <div className="space-y-5" data-testid="security-center">
+        <Callout tone="info" title="This is the shared demo account" data-testid="demo-locked">
+          Every visitor uses it, so its password, two-factor authentication and recovery codes
+          cannot be changed, and it cannot be deleted. Create your own free account to try those
+          features.
+        </Callout>
+        <div className="grid items-start gap-5 xl:grid-cols-2">
+          <SessionsSection />
+          <ActivitySection />
+        </div>
+      </div>
+    );
+  }
   return (
     <div className="grid items-start gap-5 xl:grid-cols-2" data-testid="security-center">
       <div className="space-y-5">
