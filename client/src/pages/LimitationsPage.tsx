@@ -3,12 +3,7 @@
  * limit, each with the reason. A stated limit is better than a surprise.
  */
 import type { ReactNode } from 'react';
-import {
-  LIST_POINTS_MAX_P,
-  MAX_FIELD_BITS,
-  MAX_INPUT_LENGTH,
-  MAX_SCALAR_BITS,
-} from '@shared/ecc/index.ts';
+import { LIST_POINTS_MAX_P, MAX_FIELD_BITS } from '@shared/ecc/index.ts';
 import { Callout } from '../components/ui/Callout.tsx';
 import { Card } from '../components/ui/Card.tsx';
 import { SCATTER_MAX_P } from '../features/points/PointsPlot.tsx';
@@ -69,21 +64,6 @@ const LIMITATIONS: Limitation[] = [
     ),
   },
   {
-    title: 'Size of the numbers',
-    limit: (
-      <>
-        p and k may have up to {MAX_FIELD_BITS} bits (about 309 digits). An input box accepts at
-        most {MAX_INPUT_LENGTH} characters.
-      </>
-    ),
-    reason: (
-      <>
-        Real curves in use today have 256 to 521 bits, so this leaves plenty of room while keeping
-        every calculation instant. k is {MAX_SCALAR_BITS} bits at most for the same reason.
-      </>
-    ),
-  },
-  {
     title: 'Checking that p is prime',
     limit: <>Proven correct for p below about 3.3 × 10²⁴; a probabilistic test above that.</>,
     reason: (
@@ -91,17 +71,6 @@ const LIMITATIONS: Limitation[] = [
         The app uses the Miller-Rabin test with 24 fixed bases. For larger p a composite number
         would have to fool all 24 bases at once. No such number is known and the chance is below one
         in 10¹⁴ per number, but it is not a mathematical proof.
-      </>
-    ),
-  },
-  {
-    title: 'Number format',
-    limit: <>Results are shown in decimal. Hexadecimal (0x…) is accepted as input only.</>,
-    reason: (
-      <>
-        The steps follow the hand method taught in class, which is done in decimal. Very long
-        numbers are shortened in tables; the full value is always in the result line and in the
-        step-by-step working.
       </>
     ),
   },
@@ -117,53 +86,25 @@ const LIMITATIONS: Limitation[] = [
     ),
   },
   {
-    title: 'Saving needs an account',
-    limit: <>As a guest, reloading the page starts again from the example curve.</>,
-    reason: (
-      <>
-        Calculations run in your browser. Only the theme, text size and practice record are
-        remembered on this device. Signing in adds saved curves and points and a history.
-      </>
-    ),
-  },
-  {
-    title: 'No email',
-    limit: <>The app never sends email, so a lost password is reset with a recovery code.</>,
-    reason: (
-      <>
-        Each account gets ten one-time recovery codes when it is created. Someone who loses both
-        their password and all their codes cannot get back in; nobody can reset it for them.
-      </>
-    ),
-  },
-  {
     title: 'AI mode of the assistant',
     limit: (
       <>
-        Needs internet and a server key, with 20 questions per user per hour and a daily cap for all
-        users.
+        Needs an internet connection, and allows {DEFAULT_DAILY_AI_QUESTIONS} questions a day for
+        all users together (and 20 an hour per user).
       </>
     ),
     reason: (
       <>
-        The cap is 50 questions by default and restarts at midnight UTC; after that, and whenever
-        the provider cannot answer, the offline helper takes over. The numbers come from the engine,
-        but the wording of an AI answer can be imperfect.
-      </>
-    ),
-  },
-  {
-    title: 'Browsers',
-    limit: <>Tested on current versions of Chrome and Edge. Firefox is not verified yet.</>,
-    reason: (
-      <>
-        Every screen is checked automatically in Chrome and Edge. The same checks do not all pass in
-        Firefox yet, so please use Chrome or Edge. The app needs a modern browser with very large
-        whole numbers (BigInt) and background workers; Internet Explorer will not run it.
+        The daily count restarts at midnight UTC. Without internet, after the limit, or whenever the
+        AI cannot answer, the built-in offline helper answers instead and says so. Every number in
+        an AI answer is checked against the engine.
       </>
     ),
   },
 ];
+
+/** The daily AI limit as shipped (the server's AI_DAILY_LIMIT setting can change it). */
+const DEFAULT_DAILY_AI_QUESTIONS = 50;
 
 /** The Limitations page. */
 export function LimitationsPage() {
@@ -177,9 +118,9 @@ export function LimitationsPage() {
       </p>
 
       <Callout tone="info" title="What has no limit" className="mt-5">
-        Adding two points and multiplying a point by a scalar work for every valid curve, from the
-        smallest classroom example to the 256-bit curves used on the internet, and always show their
-        steps.
+        Adding two points and multiplying a point by a scalar work for every valid curve with p up
+        to {MAX_FIELD_BITS} bits, from the smallest classroom example to the 256-bit curves used on
+        the internet, and always show their steps.
       </Callout>
 
       <ul className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3" data-testid="limitations-list">

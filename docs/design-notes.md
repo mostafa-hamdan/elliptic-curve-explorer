@@ -136,9 +136,11 @@ These are meant as raw material for the project report.
   step for it.
 - **Browser tests** run in Chromium by default; the installed Microsoft Edge can be
   added locally with `PW_EDGE=1`. Both pass in full.
-- **Firefox is not supported yet.** On CI (Linux) about one Firefox test in seven ends
-  with "Page crashed", mostly in the tests that take full-page screenshots and then run
-  the accessibility check. The cause is not known: Playwright's Firefox build does not
-  start on the development laptop, so it could not be reproduced there. Firefox therefore
-  runs in a separate CI job that does not block changes, and the Limitations page tells
-  users to use Chrome or Edge.
+- **Firefox works; its CI job does not block.** The app was checked by hand in Firefox.
+  On CI (Linux machines without a graphics card) headless Firefox sometimes ends a test
+  with "Page crashed", always on the Explorer page, while choosing an example curve or
+  running the accessibility check. Nothing in the app's own output points to a bug, and
+  Playwright's Firefox build does not start on the development laptop, so it cannot be
+  reproduced there. It is treated as a problem of the test machine: the Firefox job draws
+  in software, records the last console lines when a page crashes, and does not block a
+  change.

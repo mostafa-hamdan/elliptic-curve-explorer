@@ -49,11 +49,11 @@ jobs:
             test-results/
           retention-days: 7
 
-  # Firefox is not a supported browser yet (see the Limitations page): some of its
-  # automated checks still fail. This job keeps running them so progress is visible, but
-  # it does not block a change. Remove `continue-on-error` once it passes reliably.
-  firefox-preview:
-    name: Firefox (not supported yet, does not block)
+  # The same browser tests in Firefox. The app works in Firefox (checked by hand); on these
+  # CI machines headless Firefox has crashed its page while drawing the Explorer, which is a
+  # problem of the test machine. Until this job passes reliably it does not block a change.
+  firefox:
+    name: Firefox (test machine issue, does not block)
     runs-on: ubuntu-latest
     timeout-minutes: 30
     continue-on-error: true

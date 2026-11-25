@@ -111,10 +111,8 @@ Stated openly, and also on the app's Limitations page:
 - Educational use only: the calculations are not hardened against timing attacks.
 - Primality is proven below about 3.3 × 10²⁴ and probabilistic (24 Miller-Rabin bases)
   above.
-- AI mode needs internet and a server key; its wording can be imperfect, although its
-  numbers come from the engine.
-- No email: a lost password is reset with a recovery code.
-- Tested on current Chrome and Edge; Firefox is not verified yet.
+- The assistant's AI mode needs an internet connection and allows 50 questions a day for
+  all users together (20 an hour per user); after that the offline helper answers.
 
 ## Turning on the assistant's AI mode (optional)
 

@@ -293,7 +293,7 @@ test.describe('navigation and pages', () => {
       .click();
     await expect(page).toHaveURL(/\/limitations$/);
     await expect(page).toHaveTitle('Limitations · OnCurve');
-    await expect(page.getByTestId('limitations-list').locator('li')).toHaveCount(11);
+    await expect(page.getByTestId('limitations-list').locator('li')).toHaveCount(6);
     await expect(page.getByText('Works for primes up to p = 200,000.')).toBeVisible();
 
     await page

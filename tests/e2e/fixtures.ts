@@ -32,6 +32,16 @@ export const test = base.extend<{ consoleGuard: void; skipTour: void }>({
         }
       });
       page.on('pageerror', (error) => problems.push(`[uncaught] ${error.message}`));
+      // If the browser's page process dies, keep the last console lines: they are the only
+      // clue in the test report (Firefox on CI has crashed this way).
+      const recent: string[] = [];
+      page.on('console', (message) => {
+        recent.push(`[${message.type()}] ${message.text()}`.slice(0, 200));
+        if (recent.length > 8) recent.shift();
+      });
+      page.on('crash', () =>
+        problems.push(`[page crashed at ${page.url()}] last console lines: ${recent.join(' | ')}`),
+      );
 
       await use();
 

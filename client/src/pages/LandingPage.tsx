@@ -524,8 +524,7 @@ export function LandingPage() {
             and other curve shapes, such as Curve25519, are not covered.
           </Question>
           <Question q="Which browsers does it support?">
-            It is tested on current versions of Chrome and Edge; Firefox is not verified yet. See
-            the{' '}
+            Current versions of Chrome, Edge and Firefox. See the{' '}
             <Link to="/limitations" className="font-medium text-primary hover:underline">
               Limitations
             </Link>{' '}
